@@ -1,0 +1,32 @@
+rand.Seed(time.Now().UnixNano())
+
+wordSize := 32
+arrRates := [10]float64{.1, .01, .001, .0001, .00001, .000001, .0000001, .00000001, .000000001, .0000000001}
+lngIterations := 100
+lngTestNum := 0x12345678
+var rateData []ErrorRate
+
+for _, decRate := range arrRates {
+    lngNum := lngTestNum
+    lngFlipCount := 0
+    var arrErr []Iteration
+    for j := 0; j < lngIterations; j++ {
+        for k := 0; k < wordSize; k++ {
+            if math.Floor(rand.Float64()/decRate) == math.Floor(rand.Float64()/decRate) {
+                lngFlipCount++
+
+                lngPrevNum := lngNum
+
+                lngNum ^= (1 << k)
+
+                errData := ErrorData{int64(lngPrevNum), int8(k), int64(lngNum), int64(lngNum - lngPrevNum), time.Now().Format("01-01-1900 00:00:00.000000000")}
+                iterData := Iteration{int64(lngFlipCount), ErrorData(errData)}
+                arrErr = append(arrErr, iterData)
+            }
+        }
+    }
+    rateData = append(rateData, ErrorRate{decRate, arrErr})
+}
+jsonOutput := Output{rateData}
+m, _ := json.MarshalIndent(jsonOutput, "", "    ")
+fmt.Println(string(m))
