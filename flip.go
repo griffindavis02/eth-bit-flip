@@ -79,7 +79,7 @@ func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []floa
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
-func (this Output) BitFlip(pbigNum *big.Int, plngFlipCount int) *big.Int {
+func (this *Output) BitFlip(pbigNum *big.Int, plngFlipCount int) *big.Int {
 	rand.Seed(time.Now().UnixNano())
 
 	// Check for out of bounds
@@ -92,7 +92,7 @@ func (this Output) BitFlip(pbigNum *big.Int, plngFlipCount int) *big.Int {
 		return pbigNum
 	}
 
-	decRate := this.Data[mintRateIndex].Rate
+	decRate := (*this).Data[mintRateIndex].Rate
 	var arrBits []int
 
 	// Store previous states
@@ -133,7 +133,7 @@ func (this Output) BitFlip(pbigNum *big.Int, plngFlipCount int) *big.Int {
 	bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
 	fmt.Println(string(bytJSON))
 
-	this.Data[mintRateIndex].FlipData = append(this.Data[mintRateIndex].FlipData, iteration)
+	(*this).Data[mintRateIndex].FlipData = append((*this).Data[mintRateIndex].FlipData, iteration)
 
 	return pbigNum
 }
