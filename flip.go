@@ -60,7 +60,7 @@ var (
 // 'iteration' - increments for each bit flipped
 // 'variable' - increments for each variable, regardless of bits flipped
 // 'time' - checks against passage of time since started
-func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []float64, pOutput Output) {
+func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []float64, pOutput *Output) {
 	mstrTestType = pstrTestType
 	switch mstrTestType {
 	case "iteration":
@@ -76,7 +76,7 @@ func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []floa
 	var flipData []Iteration
 	for _, errRate := range parrErrRates {
 		Rate := ErrorRate{errRate, flipData}
-		pOutput.Data = append(pOutput.Data, Rate)
+		(*pOutput).Data = append(pOutput.Data, Rate)
 	}
 }
 
