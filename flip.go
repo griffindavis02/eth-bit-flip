@@ -137,3 +137,11 @@ func (this *Output) BitFlip(pbigNum *big.Int, plngFlipCount int) *big.Int {
 
 	return pbigNum
 }
+
+func (this Output) MarshalIndent() string {
+	byt, err := json.MarshalIndent(this, "", "\t")
+	if err != nil {
+		return string(byt)
+	}
+	return "err"
+}
