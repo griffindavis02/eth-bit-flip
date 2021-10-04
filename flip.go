@@ -1,6 +1,7 @@
 package BitFlip
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -49,7 +50,6 @@ var (
 	mlngVarsChanged int
 	mdurNanoSeconds time.Duration
 	mtimStartTime   time.Time
-	marrErrRates    []float64
 	mintRateIndex   int = 0
 )
 
@@ -71,7 +71,7 @@ func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []floa
 		mtimStartTime = time.Now()
 		mdurNanoSeconds = time.Duration(pITestCount.(float64) * math.Pow(10, 9))
 	default:
-		log.Fatal(fmt.Sprintf("Must use a valid test type: 'iteration', 'variable', 'time'"))
+		log.Fatal("Must use a valid test type: 'iteration', 'variable', 'time'")
 	}
 	var flipData []Iteration
 	for _, errRate := range parrErrRates {
@@ -86,19 +86,31 @@ func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []floa
 func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
 	rand.Seed(time.Now().UnixNano())
 
-	// Check for out of bounds
+	// Check for out of bounds or end of error rate
 	switch mstrTestType {
 	case "iteration":
 		if mlngCounter >= mlngIterations {
-			return pbigNum
+			if mintRateIndex == len((*this).Data)-1 {
+				return pbigNum
+			}
+			mintRateIndex++
+			mlngCounter = 0
 		}
 	case "variable":
 		if mlngCounter >= mlngVarsChanged {
-			return pbigNum
+			if mintRateIndex == len((*this).Data)-1 {
+				return pbigNum
+			}
+			mintRateIndex++
+			mlngCounter = 0
 		}
 	default:
 		if time.Since(mtimStartTime) >= mdurNanoSeconds {
-			return pbigNum
+			if mintRateIndex == len((*this).Data)-1 {
+				return pbigNum
+			}
+			mintRateIndex++
+			mtimStartTime = time.Now()
 		}
 	}
 
@@ -106,6 +118,7 @@ func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
 	var arrBits []int
 
 	// Store previous states
+	lngPrevCounter := mlngCounter
 	bigPrevNum, _ := new(big.Int).SetString(pbigNum.String(), 10)
 	bigPrevNum = mathEth.U256(bigPrevNum)
 	bytPrevNum := bigPrevNum.Bytes()
@@ -122,28 +135,29 @@ func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
 		}
 	}
 
-	// Recreate number from byte code
-	pbigNum.SetBytes(bytNum)
+	// Ensure there was a change
+	if !bytes.Equal(bytNum, bytPrevNum) {
+		// Recreate number from byte code
+		pbigNum.SetBytes(bytNum)
+		// Build error data
+		iteration := Iteration{
+			int(lngPrevCounter),
+			ErrorData{
+				bigPrevNum,
+				"0x" + hex.EncodeToString(bytPrevNum),
+				arrBits,
+				pbigNum,
+				"0x" + hex.EncodeToString(bytNum),
+				big.NewInt(0).Sub(pbigNum, bigPrevNum),
+				time.Now().Format("01-02-2006 15:04:05.000000000"),
+			},
+		}
 
-	// Build error data
-	iteration := Iteration{
-		int(mlngCounter),
-		ErrorData{
-			bigPrevNum,
-			hex.EncodeToString(bytPrevNum),
-			arrBits,
-			pbigNum,
-			hex.EncodeToString(bytNum),
-			big.NewInt(0).Sub(pbigNum, bigPrevNum),
-			time.Now().Format("01-02-2006-15:04:05.000000000"),
-		},
+		// Pretty print JSON in console and append to error rate data
+		bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
+		fmt.Println(string(bytJSON))
+		(*this).Data[mintRateIndex].FlipData = append((*this).Data[mintRateIndex].FlipData, iteration)
 	}
-
-	// Pretty print JSON in console and append to error rate data
-	bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
-	fmt.Println(string(bytJSON))
-
-	(*this).Data[mintRateIndex].FlipData = append((*this).Data[mintRateIndex].FlipData, iteration)
 
 	return pbigNum
 }
@@ -151,7 +165,7 @@ func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
 func (this Output) MarshalIndent() string {
 	byt, err := json.MarshalIndent(this, "", "\t")
 	if err != nil {
-		return string(byt)
+		return "err"
 	}
-	return "err"
+	return string(byt)
 }
