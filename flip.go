@@ -14,7 +14,7 @@ import (
 
 type IBitFlip interface {
 	Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []float64, pOutput Output)
-	BitFlip(pbigNum *big.Int, pdecRate float64, plngFlipCount int) (*big.Int, Iteration)
+	BitFlip(pbigNum *big.Int) *big.Int
 }
 
 type ErrorData struct {
