@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"math/big"
 	"math/rand"
@@ -43,6 +44,7 @@ type Output struct {
 
 var (
 	mstrTestType    string
+	mlngCounter     int
 	mlngIterations  int
 	mlngVarsChanged int
 	mdurNanoSeconds time.Duration
@@ -65,9 +67,11 @@ func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []floa
 		mlngIterations = pITestCount.(int)
 	case "variable":
 		mlngVarsChanged = pITestCount.(int)
-	default:
+	case "time":
 		mtimStartTime = time.Now()
 		mdurNanoSeconds = time.Duration(pITestCount.(float64) * math.Pow(10, 9))
+	default:
+		log.Fatal(fmt.Sprintf("Must use a valid test type: 'iteration', 'variable', 'time'"))
 	}
 	var flipData []Iteration
 	for _, errRate := range parrErrRates {
@@ -79,17 +83,23 @@ func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []floa
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
-func (this *Output) BitFlip(pbigNum *big.Int, plngFlipCount int) *big.Int {
+func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
 	rand.Seed(time.Now().UnixNano())
 
 	// Check for out of bounds
-	if plngFlipCount > mlngIterations ||
-		plngFlipCount > mlngVarsChanged ||
-		time.Since(mtimStartTime) >= mdurNanoSeconds {
-		if mintRateIndex < len(marrErrRates) {
-			mintRateIndex++
+	switch mstrTestType {
+	case "iteration":
+		if mlngCounter >= mlngIterations {
+			return pbigNum
 		}
-		return pbigNum
+	case "variable":
+		if mlngCounter >= mlngVarsChanged {
+			return pbigNum
+		}
+	default:
+		if time.Since(mtimStartTime) >= mdurNanoSeconds {
+			return pbigNum
+		}
 	}
 
 	decRate := (*this).Data[mintRateIndex].Rate
@@ -105,7 +115,7 @@ func (this *Output) BitFlip(pbigNum *big.Int, plngFlipCount int) *big.Int {
 	for i, byt := range bytNum {
 		for j := 0; j < 8; j++ {
 			if math.Floor(rand.Float64()/decRate) == math.Floor(rand.Float64()/decRate) {
-				plngFlipCount++
+				mlngCounter++
 				arrBits = append(arrBits, (i*8)+j)
 				bytNum[i] = byt ^ (1 << j)
 			}
@@ -117,7 +127,7 @@ func (this *Output) BitFlip(pbigNum *big.Int, plngFlipCount int) *big.Int {
 
 	// Build error data
 	iteration := Iteration{
-		int(plngFlipCount),
+		int(mlngCounter),
 		ErrorData{
 			bigPrevNum,
 			hex.EncodeToString(bytPrevNum),
