@@ -1,7 +1,7 @@
 package BitFlip
 
 import (
-	"fmt"
+	"encoding/hex"
 	"math"
 	"math/big"
 	"math/rand"
@@ -11,16 +11,18 @@ import (
 )
 
 type ErrorData struct {
-	PreviousValue int64
-	IntBit        int16
-	ErrorValue    int64
-	DeltaValue    int64
+	PreviousValue *big.Int
+	PreviousByte  string
+	IntBits       []int
+	ErrorValue    *big.Int
+	ErrorByte     string
+	DeltaValue    *big.Int
 	When          string
 }
 
 type Iteration struct {
-	IterationNum int64
-	Data         ErrorData
+	IterationNum int
+	ErrorData    ErrorData
 }
 
 type ErrorRate struct {
@@ -32,46 +34,43 @@ type Output struct {
 	Data []ErrorRate
 }
 
-// BitFlip will run the odds of flipping a bit within plngNum based on error
+// BitFlip will run the odds of flipping a bit within pbigNum based on error
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
-func BitFlip(plngNum int64, pintWordSize int16, pdecRate float64, plngFlipCount int64) (int64, []Iteration) {
+func BitFlip(pbigNum *big.Int, pdecRate float64, plngFlipCount int) (*big.Int, Iteration) {
 	rand.Seed(time.Now().UnixNano())
 
-	var arrErr []Iteration
-	for i := int16(0); i < pintWordSize*8; i++ {
-		if math.Floor(rand.Float64()/pdecRate) == math.Floor(rand.Float64()/pdecRate) {
-			plngFlipCount++
+	var arrBits []int
 
-			lngPrevNum := plngNum
+	bigPrevNum, _ := new(big.Int).SetString(pbigNum.String(), 10)
+	bigPrevNum = mathEth.U256(bigPrevNum)
+	bytPrevNum := bigPrevNum.Bytes()
+	bytNum := pbigNum.Bytes()
 
-			plngNum ^= (1 << i)
-
-			errData := ErrorData{int64(lngPrevNum), int16(i), int64(plngNum), int64(plngNum - lngPrevNum), time.Now().Format("01-02-2006 15:04:06.000000000")}
-			iterData := Iteration{int64(plngFlipCount), ErrorData(errData)}
-			arrErr = append(arrErr, iterData)
+	for i, byt := range bytNum {
+		for j := 0; j < 8; j++ {
+			if math.Floor(rand.Float64()/pdecRate) == math.Floor(rand.Float64()/pdecRate) {
+				plngFlipCount++
+				arrBits = append(arrBits, (i*8)+j)
+				bytNum[i] = byt ^ (1 << j)
+			}
 		}
 	}
-	// fmt.Println(arrErr)
-	return plngNum, arrErr
-}
 
-func Testing() {
-	test := mathEth.U256(big.NewInt(mathEth.MaxBig256.Int64()))
-	bTest := test.Bytes()
+	pbigNum.SetBytes(bytNum)
 
-	fmt.Println(test)
-	fmt.Println(*test)
-	fmt.Println(bTest)
-
-	for i, byt := range bTest {
-		bit := int64(math.Floor(rand.Float64() * 8))
-		bTest[i] = byt ^ (1 << bit)
+	iteration := Iteration{
+		int(plngFlipCount),
+		ErrorData{
+			bigPrevNum,
+			hex.EncodeToString(bytPrevNum),
+			arrBits,
+			pbigNum,
+			hex.EncodeToString(bytNum),
+			big.NewInt(0).Sub(pbigNum, bigPrevNum),
+			time.Now().Format("01-02-2006-15:04:05.000000000"),
+		},
 	}
 
-	test.SetBytes(bTest)
-
-	fmt.Println(test)
-	fmt.Println(*test)
-	fmt.Println(test.Bytes())
+	return pbigNum, iteration
 }
