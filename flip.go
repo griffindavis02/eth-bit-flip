@@ -9,6 +9,7 @@ import (
 	"math"
 	"math/big"
 	"math/rand"
+	"net/http"
 	"time"
 
 	mathEth "github.com/ethereum/go-ethereum/common/math"
@@ -163,9 +164,18 @@ func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
 		bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
 		fmt.Println(string(bytJSON))
 		(*this).Data[mintRateIndex].FlipData = append((*this).Data[mintRateIndex].FlipData, iteration)
+		(*this).PostAPI("http://localhost:5000/express")
 	}
 
 	return pbigNum
+}
+
+func (this Output) Marshal() string {
+	byt, err := json.Marshal(this)
+	if err != nil {
+		return "err"
+	}
+	return string(byt)
 }
 
 func (this Output) MarshalIndent() string {
@@ -174,4 +184,21 @@ func (this Output) MarshalIndent() string {
 		return "err"
 	}
 	return string(byt)
+}
+
+func (this Output) PostAPI(url string) int {
+	client := http.Client{}
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	query := req.URL.Query()
+	query.Add("params", this.Marshal())
+	req.URL.RawQuery = query.Encode()
+
+	res, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return res.StatusCode
 }
