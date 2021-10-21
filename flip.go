@@ -123,20 +123,26 @@ func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
 	bigPrevNum = mathEth.U256(bigPrevNum)
 	bytPrevNum := bigPrevNum.Bytes()
 	bytNum := pbigNum.Bytes()
+	intLastByte := len(bytNum) - 1
 
 	// Run chance of flipping a bit in byte representation
-	for i, byt := range bytNum {
+	for i := range bytNum {
 		for j := 0; j < 8; j++ {
 			if math.Floor(rand.Float64()/decRate) == math.Floor(rand.Float64()/decRate) {
-				mlngCounter++
+				if mstrTestType == "iteration" {
+					mlngCounter++
+				}
 				arrBits = append(arrBits, (i*8)+j)
-				bytNum[i] = byt ^ (1 << j)
+				bytNum[intLastByte-i] ^= (1 << j)
 			}
 		}
 	}
 
 	// Ensure there was a change
 	if !bytes.Equal(bytNum, bytPrevNum) {
+		if mstrTestType == "variable" {
+			mlngCounter++
+		}
 		// Recreate number from byte code
 		pbigNum.SetBytes(bytNum)
 		// Build error data
