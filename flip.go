@@ -65,7 +65,7 @@ var (
 	mlngCounter     int
 	mlngIterations  int
 	mlngVarsChanged int
-	mdurNanoSeconds time.Duration
+	mdurDurationNs  time.Duration
 	mtimStartTime   time.Time
 	mintRateIndex   int = 0
 )
@@ -86,7 +86,7 @@ func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []floa
 		mlngVarsChanged = pITestCount.(int)
 	case "time":
 		mtimStartTime = time.Now()
-		mdurNanoSeconds = time.Duration(pITestCount.(float64) * math.Pow(10, 9))
+		mdurDurationNs = time.Duration(pITestCount.(float64) * math.Pow(10, 9))
 	default:
 		log.Fatal("Must use a valid test type: 'iteration', 'variable', 'time'")
 	}
@@ -100,14 +100,14 @@ func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []floa
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
-func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
+func (jsonOut *Output) BitFlip(pbigNum *big.Int) *big.Int {
 	rand.Seed(time.Now().UnixNano())
 
 	// Check for out of bounds or end of error rate
 	switch mstrTestType {
 	case "iteration":
 		if mlngCounter >= mlngIterations {
-			if mintRateIndex == len((*this).Data)-1 {
+			if mintRateIndex == len((*jsonOut).Data)-1 {
 				return pbigNum
 			}
 			mintRateIndex++
@@ -115,15 +115,15 @@ func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
 		}
 	case "variable":
 		if mlngCounter >= mlngVarsChanged {
-			if mintRateIndex == len((*this).Data)-1 {
+			if mintRateIndex == len((*jsonOut).Data)-1 {
 				return pbigNum
 			}
 			mintRateIndex++
 			mlngCounter = 0
 		}
 	default:
-		if time.Since(mtimStartTime) >= mdurNanoSeconds {
-			if mintRateIndex == len((*this).Data)-1 {
+		if time.Since(mtimStartTime) >= mdurDurationNs {
+			if mintRateIndex == len((*jsonOut).Data)-1 {
 				return pbigNum
 			}
 			mintRateIndex++
@@ -131,7 +131,7 @@ func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
 		}
 	}
 
-	decRate := (*this).Data[mintRateIndex].Rate
+	decRate := (*jsonOut).Data[mintRateIndex].Rate
 	var arrBits []int
 
 	// Store previous states
@@ -179,37 +179,37 @@ func (this *Output) BitFlip(pbigNum *big.Int) *big.Int {
 		// Pretty print JSON in console and append to error rate data
 		bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
 		fmt.Println(string(bytJSON))
-		(*this).Data[mintRateIndex].FlipData = append((*this).Data[mintRateIndex].FlipData, iteration)
-		(*this).PostAPI("http://localhost:5000/express")
+		(*jsonOut).Data[mintRateIndex].FlipData = append((*jsonOut).Data[mintRateIndex].FlipData, iteration)
+		(*jsonOut).PostAPI("http://localhost:5000/express")
 	}
 
 	return pbigNum
 }
 
-func (this Output) Marshal() string {
-	byt, err := json.Marshal(this)
+func (jsonOut Output) Marshal() string {
+	byt, err := json.Marshal(jsonOut)
 	if err != nil {
 		return "err"
 	}
 	return string(byt)
 }
 
-func (this Output) MarshalIndent() string {
-	byt, err := json.MarshalIndent(this, "", "\t")
+func (jsonOut Output) MarshalIndent() string {
+	byt, err := json.MarshalIndent(jsonOut, "", "\t")
 	if err != nil {
 		return "err"
 	}
 	return string(byt)
 }
 
-func (this Output) PostAPI(url string) int {
+func (jsonOut Output) PostAPI(url string) int {
 	client := http.Client{}
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	query := req.URL.Query()
-	query.Add("params", this.Marshal())
+	query.Add("params", jsonOut.Marshal())
 	req.URL.RawQuery = query.Encode()
 
 	res, err := client.Do(req)
