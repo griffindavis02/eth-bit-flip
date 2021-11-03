@@ -1,4 +1,4 @@
-module github.com/griffindavis02/go-bitflip
+module github.com/griffindavis02/eth-bit-flip
 
 go 1.17
 
