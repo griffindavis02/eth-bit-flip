@@ -26,14 +26,39 @@ import (
 	"math/big"
 	"math/rand"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	mathEth "github.com/ethereum/go-ethereum/common/math"
+	"github.com/spf13/viper"
 )
 
+// TODO: Populate with remaining functions
 type IBitFlip interface {
 	Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []float64, pOutput Output)
 	BitFlip(pbigNum *big.Int) *big.Int
+}
+
+type Config struct {
+	Initialized bool `json:"initialized"`
+
+	State struct {
+		TestType string `json:"test_type"`
+		TestCounter int `json:"test_counter"`
+		Iterations int `json:"iterations"`
+		VariablesChanged int `json:"variables_changed"`
+		Duration time.Duration `json:"duration"`
+		StartTime time.Time `json:"start_time"`
+		RateIndex int `json:"rate_index"`
+		ErrorRates []int `json:"error_rates"`
+	} `json:"state_variables"`
+
+	Server struct {
+		Post bool `json:"post"`
+		Host string `json:"host"`
+		Port int `json:"port"`
+		Endpoint string `json:"endpoint"`
+	} `json:"server"`
 }
 
 type ErrorData struct {
@@ -217,4 +242,15 @@ func (jsonOut Output) PostAPI(url string) int {
 		log.Fatal(err)
 	}
 	return res.StatusCode
+}
+
+// FIXME: filetype includes pre-pended . and this function is not complete
+func getState(cfg string) {
+	path := filepath.Dir(cfg) + "/"
+	fileType := filepath.Ext(cfg)
+
+
+
+	viper.SetConfigName(path)
+	viper.SetConfigType(fileType)
 }
