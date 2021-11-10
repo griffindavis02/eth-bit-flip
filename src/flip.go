@@ -244,13 +244,23 @@ func (jsonOut Output) PostAPI(url string) int {
 	return res.StatusCode
 }
 
-// FIXME: filetype includes pre-pended . and this function is not complete
-func getState(cfg string) {
-	path := filepath.Dir(cfg) + "/"
-	fileType := filepath.Ext(cfg)
+// TODO: Implement or Change to encoding/json
+func getState(cfg *Config, cfgPath string) {
+	path := filepath.Dir(cfgPath)
+	fileType := filepath.Ext(cfgPath)
+	fileName := filepath.Base(cfgPath)
 
+	viper.SetConfigName(fileName[0:len(fileName)-len(fileType)])
+	viper.SetConfigType(fileType[1:])
+	viper.AddConfigPath(path)
 
-
-	viper.SetConfigName(path)
-	viper.SetConfigType(fileType)
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			fmt.Println("The file could not be found... try again?")
+			//TODO: Add a recursive call for filepath?
+		} else {
+			log.Fatal(err)
+		}
+	}
+	viper.Unmarshal(cfg)
 }
