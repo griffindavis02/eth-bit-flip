@@ -236,6 +236,8 @@ func init() {
 		utils.ShowDeprecated,
 		// See snapshot.go
 		snapshotCommand,
+		// See softerror.go
+		flipCommand,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 
