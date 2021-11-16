@@ -1,5 +1,6 @@
 {
     "initialized": false,
+    "path": "../../",
     "state_variables": {
         "test_type": "time",
         "test_counter": 0,
@@ -12,8 +13,6 @@
     },
     "server": {
         "post": false,
-        "host": "localhost",
-        "port": null,
-        "endpoint": "api"
+        "host": "http://localhost:5000"
     }
 }

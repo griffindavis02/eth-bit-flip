@@ -40,24 +40,23 @@ type IBitFlip interface {
 }
 
 type Config struct {
-	Initialized bool `json:"initialized"`
+	Initialized bool   `json:"initialized"`
+	Path        string `json:"path"`
 
 	State struct {
-		TestType string `json:"test_type"`
-		TestCounter int `json:"test_counter"`
-		Iterations int `json:"iterations"`
-		VariablesChanged int `json:"variables_changed"`
-		Duration time.Duration `json:"duration"`
-		StartTime time.Time `json:"start_time"`
-		RateIndex int `json:"rate_index"`
-		ErrorRates []int `json:"error_rates"`
+		TestType         string        `json:"test_type"`
+		TestCounter      int           `json:"test_counter"`
+		Iterations       int           `json:"iterations"`
+		VariablesChanged int           `json:"variables_changed"`
+		Duration         time.Duration `json:"duration"`
+		StartTime        time.Time     `json:"start_time"`
+		RateIndex        int           `json:"rate_index"`
+		ErrorRates       []int         `json:"error_rates"`
 	} `json:"state_variables"`
 
 	Server struct {
-		Post bool `json:"post"`
+		Post bool   `json:"post"`
 		Host string `json:"host"`
-		Port int `json:"port"`
-		Endpoint string `json:"endpoint"`
 	} `json:"server"`
 }
 
@@ -250,7 +249,7 @@ func getState(cfg *Config, cfgPath string) {
 	fileType := filepath.Ext(cfgPath)
 	fileName := filepath.Base(cfgPath)
 
-	viper.SetConfigName(fileName[0:len(fileName)-len(fileType)])
+	viper.SetConfigName(fileName[0 : len(fileName)-len(fileType)])
 	viper.SetConfigType(fileType[1:])
 	viper.AddConfigPath(path)
 
