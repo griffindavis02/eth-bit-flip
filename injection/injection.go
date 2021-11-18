@@ -90,7 +90,7 @@ var (
 	mlngIterations  int
 	mlngVarsChanged int
 	mdurDurationNs  time.Duration
-	mtimStartTime   time.Time
+	mtimStartTime   int64
 	mintRateIndex   int = 0
 )
 
@@ -109,7 +109,7 @@ func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []floa
 	case "variable":
 		mlngVarsChanged = pITestCount.(int)
 	case "time":
-		mtimStartTime = time.Now()
+		mtimStartTime = time.Now().Unix()
 		mdurDurationNs = time.Duration(pITestCount.(float64) * math.Pow(10, 9))
 	default:
 		log.Fatal("Must use a valid test type: 'iteration', 'variable', 'time'")
@@ -146,12 +146,12 @@ func (jsonOut *Output) BitFlip(pbigNum *big.Int) *big.Int {
 			mlngCounter = 0
 		}
 	default:
-		if time.Since(mtimStartTime) >= mdurDurationNs {
+		if time.Since(time.Unix(mtimStartTime, 0)) >= mdurDurationNs {
 			if mintRateIndex == len((*jsonOut).Data)-1 {
 				return pbigNum
 			}
 			mintRateIndex++
-			mtimStartTime = time.Now()
+			mtimStartTime = time.Now().Unix()
 		}
 	}
 
