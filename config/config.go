@@ -69,9 +69,9 @@ var (
 	// }
 
 	reader = bufio.NewReader(os.Stdin)
-	path   = filepath.FromSlash("./flipconfig.json")
+	Path   = filepath.FromSlash("./flipconfig.json")
 
-	defaultConfig = Config{
+	DefaultConfig = Config{
 		Initialized: false,
 		State: State{
 			TestType:         "iteration",
@@ -102,7 +102,7 @@ func init() {
 }
 
 func flipWizard(ctx *cli.Context) {
-	var cfg = defaultConfig
+	var cfg = DefaultConfig
 
 	fmt.Println(" ----------------------------------------------------------- ")
 	fmt.Println("| This is flipcfg, your soft error simulation config tool   |")
@@ -285,8 +285,8 @@ func promptIntCB(prompt string, callback func(input int) (int, error)) int {
 func WriteConfig(cfg Config) error {
 	bytCfg, err := json.MarshalIndent(cfg, "", "\t")
 	if err == nil {
-		if fErr := os.WriteFile(path, bytCfg, 0); fErr != nil {
-			return fmt.Errorf("error writing to file \"%s\"", path)
+		if fErr := os.WriteFile(Path, bytCfg, 0); fErr != nil {
+			return fmt.Errorf("error writing to file \"%s\"", Path)
 		}
 		fmt.Println("\nYou've configured your next soft error injection test! Here is your configuration:")
 		fmt.Println(string(bytCfg))
@@ -296,7 +296,7 @@ func WriteConfig(cfg Config) error {
 }
 
 func ReadConfig() (Config, error) {
-	if bytes, fErr := os.ReadFile(path); fErr == nil {
+	if bytes, fErr := os.ReadFile(Path); fErr == nil {
 		var cfg Config
 		if err := json.Unmarshal(bytes, &cfg); err != nil {
 			return Config{}, fmt.Errorf("error unmarshaling file data into config")
@@ -304,5 +304,5 @@ func ReadConfig() (Config, error) {
 		return cfg, nil
 	}
 
-	return Config{}, fmt.Errorf("error reading in config file from %s", path)
+	return Config{}, fmt.Errorf("error reading in config file from %s", Path)
 }
