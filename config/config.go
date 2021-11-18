@@ -38,7 +38,7 @@ type State struct {
 	Duration         time.Duration `json:"duration"`
 	StartTime        int64         `json:"start_time"`
 	RateIndex        int           `json:"rate_index"`
-	ErrorRates       []float64     `json:"error_rates"`
+	ErrorRates       string        `json:"error_rates"`
 }
 
 type Server struct {
@@ -81,7 +81,7 @@ var (
 			Duration:         time.Duration(0),
 			StartTime:        time.Now().Unix(),
 			RateIndex:        0,
-			ErrorRates:       []float64{0.1},
+			ErrorRates:       "0.1",
 		},
 		Server: Server{
 			Post: false,
@@ -90,7 +90,7 @@ var (
 	}
 )
 
-func init() {
+func RunConfig() {
 	app := cli.NewApp()
 	app.Name = "flipcfg"
 	app.Usage = "Set up a soft error test environment for go-ethereum"
@@ -176,22 +176,11 @@ func flipWizard(ctx *cli.Context) {
 				}
 				return input, nil
 			})
-		var status int = 0
-		var tmpArray []float64
-		errRates := strings.Split(strRates, ",")
-		for i, rate := range errRates {
-			if decRate, err := strconv.ParseFloat(rate, 64); err == nil {
-				tmpArray = append(tmpArray, decRate)
-			} else {
-				log.Println("WARNING:", fmt.Sprintf("invalid error rate \"%s\" in array.\nyou will need to enter new rates", errRates[i]))
-				status = -1
-				break
-			}
-		}
-		if status == 0 {
-			cfg.State.RateIndex = 0
-			cfg.State.ErrorRates = tmpArray
+		if _, err := AtoF64Arr(strRates, "0"); err == nil {
+			cfg.State.ErrorRates = strRates
 			break
+		} else {
+			log.Println("WARNING:", err)
 		}
 	}
 
@@ -221,8 +210,14 @@ func flipWizard(ctx *cli.Context) {
 	cfg.Initialized = true
 	if err := WriteConfig(cfg); err != nil {
 		log.Println("ERROR:", err)
+	} else {
+		if cfgByt, marshErr := json.MarshalIndent(cfg, "", "\t"); marshErr == nil {
+			fmt.Println(`Congrats! You've configured your next soft error injection test!
+	Here is your configuration:
+	`)
+			fmt.Println(string(cfgByt))
+		}
 	}
-
 }
 
 func promptInput(prompt string) string {
@@ -285,7 +280,7 @@ func promptIntCB(prompt string, callback func(input int) (int, error)) int {
 func WriteConfig(cfg Config) error {
 	bytCfg, err := json.MarshalIndent(cfg, "", "\t")
 	if err == nil {
-		if fErr := os.WriteFile(Path, bytCfg, 0); fErr != nil {
+		if fErr := os.WriteFile(Path, bytCfg, 0644); fErr != nil {
 			return fmt.Errorf("error writing to file \"%s\"", Path)
 		}
 		fmt.Println("\nYou've configured your next soft error injection test! Here is your configuration:")
@@ -305,4 +300,33 @@ func ReadConfig() (Config, error) {
 	}
 
 	return Config{}, fmt.Errorf("error reading in config file from %s", Path)
+}
+
+// params[0] would be the array and params[1] a number to avoid
+func AtoF64Arr(params ...string) ([]float64, error) {
+	pLen := len(params)
+	var avoid float64
+	if pLen > 2 {
+		return nil, fmt.Errorf("you can enter just a string array, or one number to avoid as a string ('0')")
+	}
+	if pLen == 2 {
+		if ch, err := strconv.ParseFloat(params[1], 64); err != nil {
+			return nil, fmt.Errorf("error parsing character to avoid :\"%s\"", params[1])
+		} else {
+			avoid = ch
+		}
+	}
+	var tmpArray []float64
+	errRates := strings.Split(params[0], ",")
+	for i, rate := range errRates {
+		if decRate, err := strconv.ParseFloat(rate, 64); err == nil {
+			if pLen == 2 && decRate == avoid {
+				return nil, fmt.Errorf("entry \"%f\" matches number to avoid \"%f\"", decRate, avoid)
+			}
+			tmpArray = append(tmpArray, decRate)
+		} else {
+			return nil, fmt.Errorf("invalid entry \"%s\" in array.\nyou will need to enter a new array", errRates[i])
+		}
+	}
+	return tmpArray, nil
 }
