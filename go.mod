@@ -3,8 +3,9 @@ module github.com/griffindavis02/eth-bit-flip
 go 1.17
 
 require (
-	github.com/ethereum/go-ethereum v1.10.9
+	github.com/ethereum/go-ethereum v1.10.12
 	github.com/spf13/viper v1.9.0
+	gopkg.in/urfave/cli.v1 v1.20.0
 )
 
 require (
