@@ -28,45 +28,32 @@ import (
 	"strings"
 	"time"
 
-	// "github.com/ethereum/go-ethereum/cmd/utils"
 	"gopkg.in/urfave/cli.v1"
 )
 
+type State struct {
+	TestType         string        `json:"test_type"`
+	TestCounter      int           `json:"test_counter"`
+	Iterations       int           `json:"iterations"`
+	VariablesChanged int           `json:"variables_changed"`
+	Duration         time.Duration `json:"duration"`
+	StartTime        time.Time     `json:"start_time"`
+	RateIndex        int           `json:"rate_index"`
+	ErrorRates       []float64     `json:"error_rates"`
+}
+
+type Server struct {
+	Post bool   `json:"post"`
+	Host string `json:"host"`
+}
+
 type Config struct {
 	Initialized bool   `json:"initialized"`
-	Path        string `json:"path"`
-
-	State struct {
-		TestType         string        `json:"test_type"`
-		TestCounter      int           `json:"test_counter"`
-		Iterations       int           `json:"iterations"`
-		VariablesChanged int           `json:"variables_changed"`
-		Duration         time.Duration `json:"duration"`
-		StartTime        time.Time     `json:"start_time"`
-		RateIndex        int           `json:"rate_index"`
-		ErrorRates       []float64     `json:"error_rates"`
-	} `json:"state_variables"`
-
-	Server struct {
-		Post bool   `json:"post"`
-		Host string `json:"host"`
-	} `json:"server"`
+	State       State  `json:"state_variables"`
+	Server      Server `json:"server"`
 }
 
 var (
-	enableFlag = cli.BoolFlag{
-		Name:  "flip.enable",
-		Usage: "Enable soft error simulation",
-	}
-	disableFlag = cli.BoolFlag{
-		Name:  "flip.disable",
-		Usage: "Disable soft error simulation",
-	}
-	resetFlag = cli.BoolFlag{
-		Name:  "flip.reset",
-		Usage: "Reset state variables if an instance was quit during testing",
-	}
-
 	// flipCommand = cli.Command {
 	// 	Action: flipInit,
 	// 	Name: "flip",
@@ -83,6 +70,25 @@ var (
 	// }
 
 	reader = bufio.NewReader(os.Stdin)
+	path   = filepath.FromSlash("./flipconfig.json")
+
+	defaultConfig = Config{
+		Initialized: false,
+		State: State{
+			TestType:         "iteration",
+			TestCounter:      0,
+			Iterations:       0,
+			VariablesChanged: 0,
+			Duration:         time.Duration(0),
+			StartTime:        time.Now(),
+			RateIndex:        0,
+			ErrorRates:       []float64{0.1},
+		},
+		Server: Server{
+			Post: false,
+			Host: "http://localhost:5000",
+		},
+	}
 )
 
 func main() {
@@ -90,35 +96,14 @@ func main() {
 	app.Name = "flipcfg"
 	app.Usage = "Set up a soft error test environment for go-ethereum"
 	app.Flags = []cli.Flag{
-		enableFlag,
-		disableFlag,
-		resetFlag,
+		// TODO: Add flags from utils
 	}
-	app.Action = flipInit
+	app.Action = flipWizard
 	app.Run(os.Args)
 }
 
-// flipInit starts a wizard for defining soft error test variables, or either
-// enables, disables, or resets with a pre-configured test environment.
-func flipInit(ctx *cli.Context) error {
-	// FIXME: Add these flags to the utils file for reference in other code
-	if !ctx.GlobalIsSet(enableFlag.Name) && !ctx.GlobalIsSet(disableFlag.Name) && !ctx.GlobalIsSet(resetFlag.Name) {
-		flipWizard(ctx)
-	} else if ctx.GlobalIsSet(enableFlag.Name) && ctx.GlobalBool(enableFlag.Name) {
-		// TODO: enable flag for future code
-		fmt.Println("enable")
-	} else if ctx.GlobalIsSet(resetFlag.Name) && ctx.GlobalBool(resetFlag.Name) {
-		// TODO: get variables counting number of iterations and reset to 0 along with error rate index 0
-		fmt.Println("reset")
-	} else if ctx.GlobalIsSet(disableFlag.Name) && ctx.GlobalBool(disableFlag.Name) {
-		// TODO: set enable to false
-		fmt.Println("disable")
-	}
-	return errors.New(("flip command used improperly"))
-}
-
 func flipWizard(ctx *cli.Context) {
-	var cfg Config
+	var cfg = defaultConfig
 
 	fmt.Println(" ----------------------------------------------------------- ")
 	fmt.Println("| This is flipcfg, your soft error simulation config tool   |")
@@ -132,16 +117,6 @@ func flipWizard(ctx *cli.Context) {
 	fmt.Println("| repository are modifiable under the terms of GPLv3.0.     |")
 	fmt.Println(" ----------------------------------------------------------- ")
 	fmt.Println()
-
-	//TODO: add check for new config or modify config
-	// TODO: Continue experimenting with filepath, and don't allow option
-	// just choose a filepath that they are beholden too so outside code can
-	// reference it
-	path := promptInput("Please specify a path for the config, or leave blank for the root directory:")
-	if strings.Compare(path, "") == 0 {
-		path = "../../"
-	}
-	cfg.Path = filepath.Join(filepath.FromSlash(path), "flipconfig.json")
 
 	var testType string
 	for {
@@ -311,10 +286,8 @@ func promptIntCB(prompt string, callback func(input int) (int, error)) int {
 func WriteConfig(cfg Config) error {
 	bytCfg, err := json.MarshalIndent(cfg, "", "\t")
 	if err == nil {
-		// splitPath := strings.Split(cfg.Path, "/")
-		// if strings.Compare("")
-		if fErr := os.WriteFile(cfg.Path, bytCfg, 0); fErr != nil {
-			return fmt.Errorf("error writing to file \"%s\"", cfg.Path)
+		if fErr := os.WriteFile(path, bytCfg, 0); fErr != nil {
+			return fmt.Errorf("error writing to file \"%s\"", path)
 		}
 		fmt.Println("\nYou've configured your next soft error injection test! Here is your configuration:")
 		fmt.Println(string(bytCfg))
