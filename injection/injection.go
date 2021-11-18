@@ -39,6 +39,7 @@ type IBitFlip interface {
 	BitFlip(pbigNum *big.Int) *big.Int
 }
 
+// TODO: Import from config
 type Config struct {
 	Initialized bool   `json:"initialized"`
 	Path        string `json:"path"`

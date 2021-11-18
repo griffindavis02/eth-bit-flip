@@ -36,7 +36,7 @@ type State struct {
 	Iterations       int           `json:"iterations"`
 	VariablesChanged int           `json:"variables_changed"`
 	Duration         time.Duration `json:"duration"`
-	StartTime        time.Time     `json:"start_time"`
+	StartTime        int64         `json:"start_time"`
 	RateIndex        int           `json:"rate_index"`
 	ErrorRates       []float64     `json:"error_rates"`
 }
@@ -79,7 +79,7 @@ var (
 			Iterations:       0,
 			VariablesChanged: 0,
 			Duration:         time.Duration(0),
-			StartTime:        time.Now(),
+			StartTime:        time.Now().Unix(),
 			RateIndex:        0,
 			ErrorRates:       []float64{0.1},
 		},
@@ -162,7 +162,7 @@ func flipWizard(ctx *cli.Context) {
 					}
 				})),
 		)
-		cfg.State.StartTime = time.Now()
+		cfg.State.StartTime = time.Now().Unix()
 	}
 
 	for {
