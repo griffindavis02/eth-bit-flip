@@ -19,7 +19,6 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -296,7 +295,14 @@ func WriteConfig(cfg Config) error {
 	return fmt.Errorf("error marshaling config")
 }
 
-func ReadConfig() error {
-	// TODO: Populate, may need to use addressing
-	return nil
+func ReadConfig() (Config, error) {
+	if bytes, fErr := os.ReadFile(path); fErr == nil {
+		var cfg Config
+		if err := json.Unmarshal(bytes, &cfg); err != nil {
+			return Config{}, fmt.Errorf("error unmarshaling file data into config")
+		}
+		return cfg, nil
+	}
+
+	return Config{}, fmt.Errorf("error reading in config file from %s", path)
 }
