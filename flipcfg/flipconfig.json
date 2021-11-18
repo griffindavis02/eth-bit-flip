@@ -1,0 +1,17 @@
+{
+    "initialized": true,
+    "state_variables": {
+        "test_type": "time",
+        "test_counter": 0,
+        "iterations": 0,
+        "variables_changed": 0,
+        "duration": 124,
+        "start_time": "2021-11-14T16:21:40.2445251-05:00",
+        "rate_index": 0,
+        "error_rates": [0.01, 0.1]
+    },
+    "server": {
+        "post": false,
+        "host": ""
+    }
+}
