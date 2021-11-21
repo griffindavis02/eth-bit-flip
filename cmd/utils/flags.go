@@ -67,6 +67,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/netutil"
 	"github.com/ethereum/go-ethereum/params"
 	pcsclite "github.com/gballet/go-libpcsclite"
+	bitflip "github.com/griffindavis02/eth-bit-flip/config"
 	gopsutil "github.com/shirou/gopsutil/mem"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -779,6 +780,88 @@ var (
 	CatalystFlag = cli.BoolFlag{
 		Name:  "catalyst",
 		Usage: "Catalyst mode (eth2 integration testing)",
+	}
+
+	// Flags for simulating soft errors in the blockchain
+	// TODO: Add flag declarations to main.go
+	FlipPath = cli.StringFlag{
+		Name:  "flip.path",
+		Usage: "Path to soft error configuration file",
+		Value: bitflip.Path,
+	}
+
+	FlipStart = cli.BoolFlag{
+		Name:  "flip.start",
+		Usage: "Start the soft error simulation",
+	}
+
+	FlipStop = cli.BoolFlag{
+		Name:  "flip.stop",
+		Usage: "Stop the soft error simulation",
+	}
+
+	FlipRestart = cli.BoolFlag{
+		Name:  "flip.restart",
+		Usage: "Restart the soft error simulation, discarding current results",
+	}
+
+	FlipType = cli.StringFlag{
+		Name:  "flip.test_type",
+		Usage: "Determines how to increment test counter",
+		Value: bitflip.DefaultConfig.State.TestType,
+	}
+
+	FlipCounter = cli.IntFlag{
+		Name:  "flip.test_counter",
+		Usage: "Counter for iteration and variable based tests",
+		Value: bitflip.DefaultConfig.State.TestCounter,
+	}
+
+	FlipIterations = cli.IntFlag{
+		Name:  "flip.iterations",
+		Usage: "Number of iterations to run through per error rate",
+		Value: bitflip.DefaultConfig.State.Iterations,
+	}
+
+	FlipVariables = cli.IntFlag{
+		Name:  "flip.variables_changed",
+		Usage: "Number of variables to change per error rate",
+		Value: bitflip.DefaultConfig.State.VariablesChanged,
+	}
+
+	FlipDuration = cli.DurationFlag{
+		Name:  "flip.duration",
+		Usage: "How long per error rate to run a test for",
+		Value: bitflip.DefaultConfig.State.Duration,
+	}
+
+	FlipTime = cli.Int64Flag{
+		Name:  "flip.start_time",
+		Usage: "Start time for each error rate's test",
+		Value: bitflip.DefaultConfig.State.StartTime,
+	}
+
+	FlipRate = cli.IntFlag{
+		Name:  "flip.rate_index",
+		Usage: "Index of rate within the flip.error_rates flag",
+		Value: bitflip.DefaultConfig.State.RateIndex,
+	}
+
+	FlipRates = cli.StringFlag{
+		Name:  "flip.error_rates",
+		Usage: "String of error rates to iterate through",
+		Value: bitflip.DefaultConfig.State.ErrorRates,
+	}
+
+	FlipPost = cli.BoolFlag{
+		Name:  "flip.post",
+		Usage: "Whether or not to post results to host in flip.host flag",
+	}
+
+	FlipHost = cli.StringFlag{
+		Name:  "flip.host",
+		Usage: "Host/API to push flip results to",
+		Value: bitflip.DefaultConfig.Server.Host,
 	}
 )
 
