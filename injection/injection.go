@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License along with
 // the eth-bit-flip library. If not, see <https://www.gnu.org/licenses/>.
 
-package BitFlip
+package injection
 
 import (
 	"bytes"
@@ -26,14 +26,38 @@ import (
 	"math/big"
 	"math/rand"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	mathEth "github.com/ethereum/go-ethereum/common/math"
+	"github.com/spf13/viper"
 )
 
+// TODO: Populate with remaining functions
 type IBitFlip interface {
 	Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []float64, pOutput Output)
 	BitFlip(pbigNum *big.Int) *big.Int
+}
+
+type Config struct {
+	Initialized bool   `json:"initialized"`
+	Path        string `json:"path"`
+
+	State struct {
+		TestType         string        `json:"test_type"`
+		TestCounter      int           `json:"test_counter"`
+		Iterations       int           `json:"iterations"`
+		VariablesChanged int           `json:"variables_changed"`
+		Duration         time.Duration `json:"duration"`
+		StartTime        time.Time     `json:"start_time"`
+		RateIndex        int           `json:"rate_index"`
+		ErrorRates       []int         `json:"error_rates"`
+	} `json:"state_variables"`
+
+	Server struct {
+		Post bool   `json:"post"`
+		Host string `json:"host"`
+	} `json:"server"`
 }
 
 type ErrorData struct {
@@ -217,4 +241,25 @@ func (jsonOut Output) PostAPI(url string) int {
 		log.Fatal(err)
 	}
 	return res.StatusCode
+}
+
+// TODO: Implement or Change to encoding/json
+func getState(cfg *Config, cfgPath string) {
+	path := filepath.Dir(cfgPath)
+	fileType := filepath.Ext(cfgPath)
+	fileName := filepath.Base(cfgPath)
+
+	viper.SetConfigName(fileName[0 : len(fileName)-len(fileType)])
+	viper.SetConfigType(fileType[1:])
+	viper.AddConfigPath(path)
+
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			fmt.Println("The file could not be found... try again?")
+			//TODO: Add a recursive call for filepath?
+		} else {
+			log.Fatal(err)
+		}
+	}
+	viper.Unmarshal(cfg)
 }
