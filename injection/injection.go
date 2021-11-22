@@ -31,6 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	mathEth "github.com/ethereum/go-ethereum/common/math"
 	"github.com/griffindavis02/eth-bit-flip/config"
+	"github.com/griffindavis02/eth-bit-flip/flags"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -45,6 +46,7 @@ type ErrorData struct {
 }
 
 type Iteration struct {
+	Rate float64
 	IterationNum int
 	ErrorData    ErrorData
 }
@@ -59,13 +61,8 @@ type Output struct {
 }
 
 var (
-	mstrTestType    string
-	mlngCounter     int
-	mlngIterations  int
-	mlngVarsChanged int
-	mdurDurationNs  time.Duration
-	mtimStartTime   int64
-	mintRateIndex   int = 0
+	cfg config.Config
+	marrErrRates []float64
 )
 
 // Set up the testing environment with the test type, number of
@@ -75,70 +72,65 @@ var (
 // 'iteration' - increments for each bit flipped
 // 'variable' - increments for each variable, regardless of bits flipped
 // 'time' - checks against passage of time since started
-func Initalize(pOutput *Output) {
-	mstrTestType = utils.FlipType.Value
-	switch mstrTestType {
-	case "iteration":
-		mlngIterations = utils.FlipIterations.Value
-	case "variable":
-		mlngVarsChanged = utils.FlipVariables.Value
-	case "time":
-		mtimStartTime = utils.FlipTime.Value
-		mdurDurationNs = utils.FlipDuration.Value
-	default:
-		log.Fatal("Must use a valid test type: 'iteration', 'variable', 'time'")
+func initalize(ctx *cli.Context) {
+	cfg = flags.FlagtoConfig(ctx)
+	var (
+		boiler Output
+		flipData []Iteration
+	)
+	marrErrRates, _ = config.AtoF64Arr(utils.FlipRates.Value)
+	for _, decErrRate := range marrErrRates {
+		Rate := ErrorRate{decErrRate, flipData}
+		boiler.Data = append(boiler.Data, Rate)
 	}
-	var flipData []Iteration
-	arrErrRates, _ := config.AtoF64Arr(utils.FlipRates.Value)
-	for _, errRate := range arrErrRates {
-		Rate := ErrorRate{errRate, flipData}
-		(*pOutput).Data = append(pOutput.Data, Rate)
+	if cfg.Server.Post {
+		postAPI(cfg.Server.Host, boiler)
 	}
 }
 
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
-func (jsonOut *Output) BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
+func BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
 	if !ctx.GlobalIsSet(utils.FlipStart.Name) || ctx.GlobalIsSet(utils.FlipStop.Name) {
 		return pbigNum
 	}
-
+	initalize(ctx)
 	rand.Seed(time.Now().UnixNano())
 
 	// Check for out of bounds or end of error rate
-	switch mstrTestType {
+	switch cfg.State.TestType {
 	case "iteration":
-		if mlngCounter >= mlngIterations {
-			if mintRateIndex == len((*jsonOut).Data)-1 {
+		if cfg.State.TestCounter >= cfg.State.Iterations {
+			if cfg.State.RateIndex == len(marrErrRates)-1 {
 				return pbigNum
 			}
-			mintRateIndex++
-			mlngCounter = 0
+			cfg.State.RateIndex++
+			cfg.State.TestCounter = 0
 		}
 	case "variable":
-		if mlngCounter >= mlngVarsChanged {
-			if mintRateIndex == len((*jsonOut).Data)-1 {
+		if cfg.State.TestCounter >= cfg.State.VariablesChanged {
+			if cfg.State.RateIndex == len(marrErrRates)-1 {
 				return pbigNum
 			}
-			mintRateIndex++
-			mlngCounter = 0
+			cfg.State.RateIndex++
+			cfg.State.TestCounter = 0
 		}
 	default:
-		if time.Since(time.Unix(mtimStartTime, 0)) >= mdurDurationNs {
-			if mintRateIndex == len((*jsonOut).Data)-1 {
+		if time.Since(time.Unix(cfg.State.StartTime, 0)) >= cfg.State.Duration {
+			if cfg.State.RateIndex == len(marrErrRates)-1 {
 				return pbigNum
 			}
-			mintRateIndex++
-			mtimStartTime = time.Now().Unix()
+			cfg.State.RateIndex++
+			cfg.State.StartTime = time.Now().Unix()
 		}
 	}
 
-	decRate := (*jsonOut).Data[mintRateIndex].Rate
+	decRate := marrErrRates[cfg.State.RateIndex]
 	var arrBits []int
 
 	// Store previous states
-	lngPrevCounter := mlngCounter
+	lngPrevCounter := cfg.State.TestCounter
 	bigPrevNum, _ := new(big.Int).SetString(pbigNum.String(), 10)
 	bigPrevNum = mathEth.U256(bigPrevNum)
 	bytPrevNum := bigPrevNum.Bytes()
@@ -149,8 +141,8 @@ func (jsonOut *Output) BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
 	for i := range bytNum {
 		for j := 0; j < 8; j++ {
 			if math.Floor(rand.Float64()/decRate) == math.Floor(rand.Float64()/decRate) {
-				if mstrTestType == "iteration" {
-					mlngCounter++
+				if cfg.State.TestType == "iteration" {
+					cfg.State.TestCounter++
 				}
 				arrBits = append(arrBits, (i*8)+j)
 				bytNum[intLastByte-i] ^= (1 << j)
@@ -160,13 +152,14 @@ func (jsonOut *Output) BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
 
 	// Ensure there was a change
 	if !bytes.Equal(bytNum, bytPrevNum) {
-		if mstrTestType == "variable" {
-			mlngCounter++
+		if cfg.State.TestType == "variable" {
+			cfg.State.TestCounter++
 		}
 		// Recreate number from byte code
 		pbigNum.SetBytes(bytNum)
 		// Build error data
 		iteration := Iteration{
+			marrErrRates[cfg.State.RateIndex],
 			int(lngPrevCounter),
 			ErrorData{
 				bigPrevNum,
@@ -182,37 +175,23 @@ func (jsonOut *Output) BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
 		// Pretty print JSON in console and append to error rate data
 		bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
 		fmt.Println(string(bytJSON))
-		(*jsonOut).Data[mintRateIndex].FlipData = append((*jsonOut).Data[mintRateIndex].FlipData, iteration)
-		(*jsonOut).PostAPI("http://localhost:5000/express")
+		if cfg.Server.Post {
+			postAPI(cfg.Server.Host, iteration)
+		}
 	}
 
 	return pbigNum
 }
 
-func (jsonOut Output) Marshal() string {
-	byt, err := json.Marshal(jsonOut)
-	if err != nil {
-		return "err"
-	}
-	return string(byt)
-}
-
-func (jsonOut Output) MarshalIndent() string {
-	byt, err := json.MarshalIndent(jsonOut, "", "\t")
-	if err != nil {
-		return "err"
-	}
-	return string(byt)
-}
-
-func (jsonOut Output) PostAPI(url string) int {
+func postAPI(url string, jsonOut interface{}) int {
 	client := http.Client{}
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	query := req.URL.Query()
-	query.Add("params", jsonOut.Marshal())
+	params, _ := json.Marshal(jsonOut)
+	query.Add("params", string(params))
 	req.URL.RawQuery = query.Encode()
 
 	res, err := client.Do(req)
