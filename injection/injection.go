@@ -90,9 +90,10 @@ func initalize(ctx *cli.Context) {
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
-func BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
+// TODO : use interface to accept multiple data types
+func BitFlip(pIFlipee *big.Int, ctx *cli.Context) *big.Int {
 	if !ctx.GlobalBool(flags.FlipStart.Name) || ctx.GlobalBool(flags.FlipStop.Name) {
-		return pbigNum
+		return pIFlipee
 	}
 	
 	initalize(ctx)
@@ -103,7 +104,7 @@ func BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
 	case "iteration":
 		if cfg.State.TestCounter >= cfg.State.Iterations {
 			if cfg.State.RateIndex == len(marrErrRates)-1 {
-				return pbigNum
+				return pIFlipee
 			}
 			cfg.State.RateIndex++
 			cfg.State.TestCounter = 0
@@ -111,7 +112,7 @@ func BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
 	case "variable":
 		if cfg.State.TestCounter >= cfg.State.VariablesChanged {
 			if cfg.State.RateIndex == len(marrErrRates)-1 {
-				return pbigNum
+				return pIFlipee
 			}
 			cfg.State.RateIndex++
 			cfg.State.TestCounter = 0
@@ -119,7 +120,7 @@ func BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
 	default:
 		if time.Since(time.Unix(cfg.State.StartTime, 0)) >= cfg.State.Duration {
 			if cfg.State.RateIndex == len(marrErrRates)-1 {
-				return pbigNum
+				return pIFlipee
 			}
 			cfg.State.RateIndex++
 			cfg.State.StartTime = time.Now().Unix()
@@ -131,43 +132,43 @@ func BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
 
 	// Store previous states
 	lngPrevCounter := cfg.State.TestCounter
-	bigPrevNum, _ := new(big.Int).SetString(pbigNum.String(), 10)
-	bigPrevNum = mathEth.U256(bigPrevNum)
-	bytPrevNum := bigPrevNum.Bytes()
-	bytNum := pbigNum.Bytes()
-	intLastByte := len(bytNum) - 1
+	IPrevFlipee, _ := new(big.Int).SetString(pIFlipee.String(), 10)
+	IPrevFlipee = mathEth.U256(IPrevFlipee)
+	bytPrevFlipee := IPrevFlipee.Bytes()
+	bytFlipee := pIFlipee.Bytes()
+	intLastByte := len(bytFlipee) - 1
 
 	// Run chance of flipping a bit in byte representation
-	for i := range bytNum {
+	for i := range bytFlipee {
 		for j := 0; j < 8; j++ {
 			if math.Floor(rand.Float64()/decRate) == math.Floor(rand.Float64()/decRate) {
 				if cfg.State.TestType == "iteration" {
 					cfg.State.TestCounter++
 				}
 				arrBits = append(arrBits, (i*8)+j)
-				bytNum[intLastByte-i] ^= (1 << j)
+				bytFlipee[intLastByte-i] ^= (1 << j)
 			}
 		}
 	}
 
 	// Ensure there was a change
-	if !bytes.Equal(bytNum, bytPrevNum) {
+	if !bytes.Equal(bytFlipee, bytPrevFlipee) {
 		if cfg.State.TestType == "variable" {
 			cfg.State.TestCounter++
 		}
 		// Recreate number from byte code
-		pbigNum.SetBytes(bytNum)
+		pIFlipee.SetBytes(bytFlipee)
 		// Build error data
 		iteration := Iteration{
 			marrErrRates[cfg.State.RateIndex],
 			int(lngPrevCounter),
 			ErrorData{
-				bigPrevNum,
-				"0x" + hex.EncodeToString(bytPrevNum),
+				IPrevFlipee,
+				"0x" + hex.EncodeToString(bytPrevFlipee),
 				arrBits,
-				pbigNum,
-				"0x" + hex.EncodeToString(bytNum),
-				big.NewInt(0).Sub(pbigNum, bigPrevNum),
+				pIFlipee,
+				"0x" + hex.EncodeToString(bytFlipee),
+				big.NewInt(0).Sub(pIFlipee, IPrevFlipee),
 				time.Now().Format("01-02-2006 15:04:05.000000000"),
 			},
 		}
@@ -180,7 +181,7 @@ func BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
 		}
 	}
 
-	return pbigNum
+	return pIFlipee
 }
 
 func postAPI(url string, jsonOut interface{}) int {
