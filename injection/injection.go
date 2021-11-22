@@ -26,11 +26,9 @@ import (
 	"math/big"
 	"math/rand"
 	"net/http"
-	"path/filepath"
 	"time"
 
 	mathEth "github.com/ethereum/go-ethereum/common/math"
-	"github.com/spf13/viper"
 )
 
 // TODO: Populate with remaining functions
@@ -52,7 +50,7 @@ type Config struct {
 		Duration         time.Duration `json:"duration"`
 		StartTime        time.Time     `json:"start_time"`
 		RateIndex        int           `json:"rate_index"`
-		ErrorRates       []int         `json:"error_rates"`
+		ErrorRates       []float64         `json:"error_rates"`
 	} `json:"state_variables"`
 
 	Server struct {
@@ -102,7 +100,7 @@ var (
 // 'iteration' - increments for each bit flipped
 // 'variable' - increments for each variable, regardless of bits flipped
 // 'time' - checks against passage of time since started
-func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []float64, pOutput *Output) {
+func Initalize(pOutput *Output) {
 	mstrTestType = pstrTestType
 	switch mstrTestType {
 	case "iteration":
@@ -242,25 +240,4 @@ func (jsonOut Output) PostAPI(url string) int {
 		log.Fatal(err)
 	}
 	return res.StatusCode
-}
-
-// TODO: Implement or Change to encoding/json
-func getState(cfg *Config, cfgPath string) {
-	path := filepath.Dir(cfgPath)
-	fileType := filepath.Ext(cfgPath)
-	fileName := filepath.Base(cfgPath)
-
-	viper.SetConfigName(fileName[0 : len(fileName)-len(fileType)])
-	viper.SetConfigType(fileType[1:])
-	viper.AddConfigPath(path)
-
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("The file could not be found... try again?")
-			//TODO: Add a recursive call for filepath?
-		} else {
-			log.Fatal(err)
-		}
-	}
-	viper.Unmarshal(cfg)
 }
