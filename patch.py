@@ -4,11 +4,46 @@ import re
 
 dirGeth = re.sub(r'\\', '/', sys.argv[1])
 fileTriggers = {
-    'cmd/geth/maintest.go': ['utils.MetricsInfluxDBOrganizationFlag,', 'app.Flags = append(app.Flags, metricsFlags...)']
+    'cmd/utils/flags.go': ['pcsclite "github.com/gballet/go-libpcsclite"', 'Usage: "Catalyst mode (eth2 integration testing)",'],
+    'cmd/geth/main.go': ['utils.MetricsInfluxDBOrganizationFlag,', 'app.Flags = append(app.Flags, metricsFlags...)']
 }
 
 patches = {
-    'cmd/geth/maintest.go': ["""
+    'cmd/utils/flags.go': ['bitflip "github.com/griffindavis02/eth-bit-flip/flags"',
+    """
+    // Flags for simulating soft errors in the blockchain
+	FlipInitialized = bitflip.FlipInitialized
+
+	FlipPath = bitflip.FlipPath
+
+	FlipStart = bitflip.FlipStart
+
+	FlipStop = bitflip.FlipStop
+
+	FlipRestart = bitflip.FlipRestart
+
+	FlipType = bitflip.FlipType
+
+	FlipCounter = bitflip.FlipCounter
+
+	FlipIterations = bitflip.FlipIterations
+
+	FlipVariables = bitflip.FlipVariables
+
+	FlipDuration = bitflip.FlipDuration
+
+	FlipTime = bitflip.FlipTime
+
+	FlipRate = bitflip.FlipRate
+
+	FlipRates = bitflip.FlipRates
+
+	FlipPost = bitflip.FlipPost
+
+	FlipHost = bitflip.FlipHost
+    """],
+
+    'cmd/geth/main.go': ["""
     flipFlags = []cli.Flag{
 		utils.FlipPath,
 		utils.FlipStart,
@@ -25,7 +60,8 @@ patches = {
 		utils.FlipPost,
 		utils.FlipHost,
 	}
-    """, '\tapp.Flags = append(app.Flags, flipFlags...)']
+    """,
+    '\tapp.Flags = append(app.Flags, flipFlags...)']
 }
 
 def main():
