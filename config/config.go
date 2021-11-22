@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -36,7 +37,7 @@ type State struct {
 	Iterations       int           `json:"iterations"`
 	VariablesChanged int           `json:"variables_changed"`
 	Duration         time.Duration `json:"duration"`
-	StartTime        time.Time     `json:"start_time"`
+	StartTime        int64     `json:"start_time"`
 	RateIndex        int           `json:"rate_index"`
 	ErrorRates       []float64     `json:"error_rates"`
 }
@@ -79,7 +80,7 @@ var (
 			Iterations:       0,
 			VariablesChanged: 0,
 			Duration:         time.Duration(0),
-			StartTime:        time.Now(),
+			StartTime:        time.Now().Unix(),
 			RateIndex:        0,
 			ErrorRates:       []float64{0.1},
 		},
@@ -160,9 +161,9 @@ func flipWizard(ctx *cli.Context) {
 					} else {
 						return -1, fmt.Errorf("received invalid duration of %d seconds", input)
 					}
-				})),
+				}))  * math.Pow(10, 9), // nanoseconds
 		)
-		cfg.State.StartTime = time.Now()
+		cfg.State.StartTime = time.Now().Unix()
 	}
 
 	for {
@@ -305,4 +306,33 @@ func ReadConfig() (Config, error) {
 	}
 
 	return Config{}, fmt.Errorf("error reading in config file from %s", Path)
+}
+
+// params[0] would be the array and params[1] a number to avoid
+func AtoF64Arr(params ...string) ([]float64, error) {
+	pLen := len(params)
+	var avoid float64
+	if pLen > 2 {
+		return nil, fmt.Errorf("you can enter just a string array, or one number to avoid as a string ('0')")
+	}
+	if pLen == 2 {
+		if ch, err := strconv.ParseFloat(params[1], 64); err != nil {
+			return nil, fmt.Errorf("error parsing character to avoid :\"%s\"", params[1])
+		} else {
+			avoid = ch
+		}
+	}
+	var tmpArray []float64
+	errRates := strings.Split(params[0], ",")
+	for i, rate := range errRates {
+		if decRate, err := strconv.ParseFloat(rate, 64); err == nil {
+			if pLen == 2 && decRate == avoid {
+				return nil, fmt.Errorf("entry \"%f\" matches number to avoid \"%f\"", decRate, avoid)
+			}
+			tmpArray = append(tmpArray, decRate)
+		} else {
+			return nil, fmt.Errorf("invalid entry \"%s\" in array.\nyou will need to enter a new array", errRates[i])
+		}
+	}
+	return tmpArray, nil
 }
