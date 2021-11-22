@@ -28,7 +28,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ethereum/go-ethereum/cmd/utils"
 	mathEth "github.com/ethereum/go-ethereum/common/math"
 	"github.com/griffindavis02/eth-bit-flip/config"
 	"github.com/griffindavis02/eth-bit-flip/flags"
@@ -78,7 +77,7 @@ func initalize(ctx *cli.Context) {
 		boiler Output
 		flipData []Iteration
 	)
-	marrErrRates, _ = config.AtoF64Arr(utils.FlipRates.Value)
+	marrErrRates, _ = config.AtoF64Arr(ctx.GlobalString(flags.FlipRates.Name))
 	for _, decErrRate := range marrErrRates {
 		Rate := ErrorRate{decErrRate, flipData}
 		boiler.Data = append(boiler.Data, Rate)
@@ -92,9 +91,10 @@ func initalize(ctx *cli.Context) {
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
 func BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
-	if !ctx.GlobalIsSet(utils.FlipStart.Name) || ctx.GlobalIsSet(utils.FlipStop.Name) {
+	if !ctx.GlobalBool(flags.FlipStart.Name) || ctx.GlobalBool(flags.FlipStop.Name) {
 		return pbigNum
 	}
+	
 	initalize(ctx)
 	rand.Seed(time.Now().UnixNano())
 
