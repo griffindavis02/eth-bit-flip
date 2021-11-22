@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -160,7 +161,7 @@ func flipWizard(ctx *cli.Context) {
 					} else {
 						return -1, fmt.Errorf("received invalid duration of %d seconds", input)
 					}
-				})),
+				}))  * math.Pow(10, 9), // nanoseconds
 		)
 		cfg.State.StartTime = time.Now().Unix()
 	}

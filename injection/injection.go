@@ -28,36 +28,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ethereum/go-ethereum/cmd/utils"
 	mathEth "github.com/ethereum/go-ethereum/common/math"
+	"github.com/griffindavis02/eth-bit-flip/config"
 )
-
-// TODO: Populate with remaining functions
-type IBitFlip interface {
-	Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []float64, pOutput Output)
-	BitFlip(pbigNum *big.Int) *big.Int
-}
-
-// TODO: Import from config
-type Config struct {
-	Initialized bool   `json:"initialized"`
-	Path        string `json:"path"`
-
-	State struct {
-		TestType         string        `json:"test_type"`
-		TestCounter      int           `json:"test_counter"`
-		Iterations       int           `json:"iterations"`
-		VariablesChanged int           `json:"variables_changed"`
-		Duration         time.Duration `json:"duration"`
-		StartTime        time.Time     `json:"start_time"`
-		RateIndex        int           `json:"rate_index"`
-		ErrorRates       []float64         `json:"error_rates"`
-	} `json:"state_variables"`
-
-	Server struct {
-		Post bool   `json:"post"`
-		Host string `json:"host"`
-	} `json:"server"`
-}
 
 type ErrorData struct {
 	PreviousValue *big.Int
@@ -101,20 +75,21 @@ var (
 // 'variable' - increments for each variable, regardless of bits flipped
 // 'time' - checks against passage of time since started
 func Initalize(pOutput *Output) {
-	mstrTestType = pstrTestType
+	mstrTestType = utils.FlipType.Value
 	switch mstrTestType {
 	case "iteration":
-		mlngIterations = pITestCount.(int)
+		mlngIterations = utils.FlipIterations.Value
 	case "variable":
-		mlngVarsChanged = pITestCount.(int)
+		mlngVarsChanged = utils.FlipVariables.Value
 	case "time":
-		mtimStartTime = time.Now().Unix()
-		mdurDurationNs = time.Duration(pITestCount.(float64) * math.Pow(10, 9))
+		mtimStartTime = utils.FlipTime.Value
+		mdurDurationNs = utils.FlipDuration.Value
 	default:
 		log.Fatal("Must use a valid test type: 'iteration', 'variable', 'time'")
 	}
 	var flipData []Iteration
-	for _, errRate := range parrErrRates {
+	arrErrRates, _ := config.AtoF64Arr(utils.FlipRates.Value)
+	for _, errRate := range arrErrRates {
 		Rate := ErrorRate{errRate, flipData}
 		(*pOutput).Data = append(pOutput.Data, Rate)
 	}
