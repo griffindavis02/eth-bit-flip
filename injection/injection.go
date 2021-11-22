@@ -28,19 +28,18 @@ import (
 	"net/http"
 	"time"
 
-	mathEth "github.com/ethereum/go-ethereum/common/math"
 	"github.com/griffindavis02/eth-bit-flip/config"
 	"github.com/griffindavis02/eth-bit-flip/flags"
 	"gopkg.in/urfave/cli.v1"
 )
 
 type ErrorData struct {
-	PreviousValue *big.Int
+	PreviousValue interface{}
 	PreviousByte  string
 	IntBits       []int
-	ErrorValue    *big.Int
+	ErrorValue    interface{}
 	ErrorByte     string
-	DeltaValue    *big.Int
+	DeltaValue    interface{}
 	When          string
 }
 
@@ -83,7 +82,7 @@ func initalize(ctx *cli.Context) {
 		boiler.Data = append(boiler.Data, Rate)
 	}
 	if cfg.Server.Post {
-		postAPI(cfg.Server.Host, boiler)
+		postAPI(cfg.Server.Host + "/initialize", boiler)
 	}
 }
 
@@ -91,20 +90,17 @@ func initalize(ctx *cli.Context) {
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
 // TODO : use interface to accept multiple data types
-func BitFlip(pIFlipee *big.Int, ctx *cli.Context) *big.Int {
+func BitFlip(pIFlipee interface{}, ctx *cli.Context) interface{} {
 	if !ctx.GlobalBool(flags.FlipStart.Name) || ctx.GlobalBool(flags.FlipStop.Name) {
 		return pIFlipee
 	}
-	
-	initalize(ctx)
-	rand.Seed(time.Now().UnixNano())
 
 	// Check for out of bounds or end of error rate
 	switch cfg.State.TestType {
 	case "iteration":
 		if cfg.State.TestCounter >= cfg.State.Iterations {
 			if cfg.State.RateIndex == len(marrErrRates)-1 {
-				return pIFlipee
+				ctx.GlobalSet(flags.FlipStop.Name, "true")
 			}
 			cfg.State.RateIndex++
 			cfg.State.TestCounter = 0
@@ -112,7 +108,7 @@ func BitFlip(pIFlipee *big.Int, ctx *cli.Context) *big.Int {
 	case "variable":
 		if cfg.State.TestCounter >= cfg.State.VariablesChanged {
 			if cfg.State.RateIndex == len(marrErrRates)-1 {
-				return pIFlipee
+				ctx.GlobalSet(flags.FlipStop.Name, "true")
 			}
 			cfg.State.RateIndex++
 			cfg.State.TestCounter = 0
@@ -120,68 +116,47 @@ func BitFlip(pIFlipee *big.Int, ctx *cli.Context) *big.Int {
 	default:
 		if time.Since(time.Unix(cfg.State.StartTime, 0)) >= cfg.State.Duration {
 			if cfg.State.RateIndex == len(marrErrRates)-1 {
-				return pIFlipee
+				ctx.GlobalSet(flags.FlipStop.Name, "true")
 			}
 			cfg.State.RateIndex++
 			cfg.State.StartTime = time.Now().Unix()
 		}
 	}
 
-	decRate := marrErrRates[cfg.State.RateIndex]
-	var arrBits []int
+	initalize(ctx)
+	rand.Seed(time.Now().UnixNano())
 
-	// Store previous states
-	lngPrevCounter := cfg.State.TestCounter
-	IPrevFlipee, _ := new(big.Int).SetString(pIFlipee.String(), 10)
-	IPrevFlipee = mathEth.U256(IPrevFlipee)
-	bytPrevFlipee := IPrevFlipee.Bytes()
-	bytFlipee := pIFlipee.Bytes()
-	intLastByte := len(bytFlipee) - 1
-
-	// Run chance of flipping a bit in byte representation
-	for i := range bytFlipee {
-		for j := 0; j < 8; j++ {
-			if math.Floor(rand.Float64()/decRate) == math.Floor(rand.Float64()/decRate) {
-				if cfg.State.TestType == "iteration" {
-					cfg.State.TestCounter++
-				}
-				arrBits = append(arrBits, (i*8)+j)
-				bytFlipee[intLastByte-i] ^= (1 << j)
-			}
-		}
+	switch pIFlipee.(type) {
+	case string:
+		iteration := flipBytes([]byte(pIFlipee.(string)), ctx)
+		iteration.ErrorData.PreviousValue = iteration.ErrorData.PreviousValue.(string)
+		iteration.ErrorData.ErrorValue = iteration.ErrorData.ErrorValue.(string)
+		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(string)
+		printOut(iteration)
+		return iteration.ErrorData.ErrorValue
+	case int:
+		iteration := flipBytes([]byte(pIFlipee.(string)), ctx)
+		iteration.ErrorData.PreviousValue = iteration.ErrorData.PreviousValue.(int)
+		iteration.ErrorData.ErrorValue = iteration.ErrorData.ErrorValue.(int)
+		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(int)
+		printOut(iteration)
+		return iteration.ErrorData.ErrorValue
+	default: // case *big.Int:
+		iteration := flipBytes([]byte(pIFlipee.(string)), ctx)
+		iteration.ErrorData.PreviousValue = *big.NewInt(0).SetBytes(iteration.ErrorData.PreviousValue.([]byte))
+		iteration.ErrorData.ErrorValue = *big.NewInt(0).SetBytes(iteration.ErrorData.ErrorValue.([]byte))
+		iteration.ErrorData.DeltaValue = *big.NewInt(0).SetBytes(iteration.ErrorData.DeltaValue.([]byte))
+		printOut(iteration)
+		return iteration.ErrorData.ErrorValue
 	}
+}
 
-	// Ensure there was a change
-	if !bytes.Equal(bytFlipee, bytPrevFlipee) {
-		if cfg.State.TestType == "variable" {
-			cfg.State.TestCounter++
-		}
-		// Recreate number from byte code
-		pIFlipee.SetBytes(bytFlipee)
-		// Build error data
-		iteration := Iteration{
-			marrErrRates[cfg.State.RateIndex],
-			int(lngPrevCounter),
-			ErrorData{
-				IPrevFlipee,
-				"0x" + hex.EncodeToString(bytPrevFlipee),
-				arrBits,
-				pIFlipee,
-				"0x" + hex.EncodeToString(bytFlipee),
-				big.NewInt(0).Sub(pIFlipee, IPrevFlipee),
-				time.Now().Format("01-02-2006 15:04:05.000000000"),
-			},
-		}
-
-		// Pretty print JSON in console and append to error rate data
-		bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
+func printOut(iteration Iteration) {
+	bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
 		fmt.Println(string(bytJSON))
 		if cfg.Server.Post {
 			postAPI(cfg.Server.Host, iteration)
 		}
-	}
-
-	return pIFlipee
 }
 
 func postAPI(url string, jsonOut interface{}) int {
@@ -200,4 +175,52 @@ func postAPI(url string, jsonOut interface{}) int {
 		log.Fatal(err)
 	}
 	return res.StatusCode
+}
+
+func flipBytes(pbytFlipee []byte, ctx *cli.Context) Iteration {
+	decRate := marrErrRates[cfg.State.RateIndex]
+	var arrBits []int
+	var iteration Iteration
+
+	// Store previous states
+	lngPrevCounter := cfg.State.TestCounter
+	var bytPrevFlipee = pbytFlipee
+	intLastByte := len(pbytFlipee) - 1
+
+	// Run chance of flipping a bit in byte representation
+	for i := range bytPrevFlipee {
+		for j := 0; j < 8; j++ {
+			if math.Floor(rand.Float64()/decRate) == math.Floor(rand.Float64()/decRate) {
+				if cfg.State.TestType == "iteration" {
+					cfg.State.TestCounter++
+				}
+				arrBits = append(arrBits, (i*8)+j)
+				pbytFlipee[intLastByte-i] ^= (1 << j)
+			}
+		}
+	}
+
+	// Ensure there was a change
+	if !bytes.Equal(pbytFlipee, bytPrevFlipee) {
+		if cfg.State.TestType == "variable" {
+			cfg.State.TestCounter++
+		}
+		// Build error data
+		iteration = Iteration{
+			marrErrRates[cfg.State.RateIndex],
+			int(lngPrevCounter),
+			ErrorData{
+				bytPrevFlipee,
+				"0x" + hex.EncodeToString(bytPrevFlipee),
+				arrBits,
+				pbytFlipee,
+				"0x" + hex.EncodeToString(bytPrevFlipee),
+				big.NewInt(0).Sub(big.NewInt(0).SetBytes(pbytFlipee),
+					big.NewInt(0).SetBytes(bytPrevFlipee)),
+				time.Now().Format("01-02-2006 15:04:05.000000000"),
+			},
+		}
+	}
+	
+	return iteration
 }
