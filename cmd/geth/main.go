@@ -194,6 +194,23 @@ var (
 		utils.MetricsInfluxDBBucketFlag,
 		utils.MetricsInfluxDBOrganizationFlag,
 	}
+
+	flipFlags = []cli.Flag{
+		utils.FlipPath,
+		utils.FlipStart,
+		utils.FlipStop,
+		utils.FlipRestart,
+		utils.FlipType,
+		utils.FlipCounter,
+		utils.FlipIterations,
+		utils.FlipVariables,
+		utils.FlipDuration,
+		utils.FlipTime,
+		utils.FlipRate,
+		utils.FlipRates,
+		utils.FlipPost,
+		utils.FlipHost,
+	}
 )
 
 func init() {
@@ -240,6 +257,7 @@ func init() {
 	app.Flags = append(app.Flags, consoleFlags...)
 	app.Flags = append(app.Flags, debug.Flags...)
 	app.Flags = append(app.Flags, metricsFlags...)
+	app.Flags = append(app.Flags, flipFlags...)
 
 	app.Before = func(ctx *cli.Context) error {
 		return debug.Setup(ctx)
@@ -424,6 +442,7 @@ func unlockAccounts(ctx *cli.Context, stack *node.Node) {
 	inputs := strings.Split(ctx.GlobalString(utils.UnlockedAccountFlag.Name), ",")
 	for _, input := range inputs {
 		if trimmed := strings.TrimSpace(input); trimmed != "" {
+			// TODO: Flip unlocks here
 			unlocks = append(unlocks, trimmed)
 		}
 	}

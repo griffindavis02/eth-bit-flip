@@ -1,5 +1,7 @@
 module github.com/ethereum/go-ethereum
 
+// replace github.com/griffindavis02/eth-bit-flip => E:\Libraries\Documents\Projects\Code\Capstone\eth-bit-flip
+
 go 1.15
 
 require (
@@ -20,15 +22,17 @@ require (
 	github.com/edsrzf/mmap-go v1.0.0
 	github.com/fatih/color v1.9.0
 	github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5
+	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff
 	github.com/go-stack/stack v1.8.0
 	github.com/golang/protobuf v1.5.2
 	github.com/golang/snappy v0.0.4
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/gofuzz v1.1.1-0.20200604201612-c04b05f3adfa
 	github.com/google/uuid v1.1.5
 	github.com/gorilla/websocket v1.4.2
 	github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29
-	github.com/griffindavis02/eth-bit-flip v0.0.0-20211118150834-906309e759ba
+	github.com/griffindavis02/eth-bit-flip v0.1.0
 	github.com/hashicorp/go-bexpr v0.1.10
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/holiman/bloomfilter/v2 v2.0.3
@@ -58,7 +62,9 @@ require (
 	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf
 	golang.org/x/text v0.3.6
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
+	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20200619000410-60c24ae608a6
 	gopkg.in/urfave/cli.v1 v1.20.0
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
