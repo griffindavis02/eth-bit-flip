@@ -18,6 +18,9 @@ This should add the required functions to your source code and include the
 configuration CLI for your use. You can then run the make commands seen on the
 go-ethereum GitHub page to build the tools.
 
+You will need to clone this repository to set up tests so you could run the
+local `patch.py` script but the above command will be more up-to-date.
+
 ## License
 
 The eth-bit-flip library (all code within this repository) is licensed under
