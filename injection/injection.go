@@ -31,6 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	mathEth "github.com/ethereum/go-ethereum/common/math"
 	"github.com/griffindavis02/eth-bit-flip/config"
+	"gopkg.in/urfave/cli.v1"
 )
 
 type ErrorData struct {
@@ -98,7 +99,11 @@ func Initalize(pOutput *Output) {
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
-func (jsonOut *Output) BitFlip(pbigNum *big.Int) *big.Int {
+func (jsonOut *Output) BitFlip(pbigNum *big.Int, ctx *cli.Context) *big.Int {
+	if !ctx.GlobalIsSet(utils.FlipStart.Name) || ctx.GlobalIsSet(utils.FlipStop.Name) {
+		return pbigNum
+	}
+
 	rand.Seed(time.Now().UnixNano())
 
 	// Check for out of bounds or end of error rate
