@@ -26,11 +26,11 @@ import (
 	"math/big"
 	"math/rand"
 	"net/http"
-	"path/filepath"
 	"time"
 
+	"github.com/ethereum/go-ethereum/cmd/utils"
 	mathEth "github.com/ethereum/go-ethereum/common/math"
-	"github.com/spf13/viper"
+	"github.com/griffindavis02/eth-bit-flip/config"
 )
 
 // TODO: Populate with remaining functions
@@ -90,7 +90,7 @@ var (
 	mlngIterations  int
 	mlngVarsChanged int
 	mdurDurationNs  time.Duration
-	mtimStartTime   time.Time
+	mtimStartTime   int64
 	mintRateIndex   int = 0
 )
 
@@ -101,21 +101,22 @@ var (
 // 'iteration' - increments for each bit flipped
 // 'variable' - increments for each variable, regardless of bits flipped
 // 'time' - checks against passage of time since started
-func Initalize(pstrTestType string, pITestCount interface{}, parrErrRates []float64, pOutput *Output) {
-	mstrTestType = pstrTestType
+func Initalize(pOutput *Output) {
+	mstrTestType = utils.FlipType.Value
 	switch mstrTestType {
 	case "iteration":
-		mlngIterations = pITestCount.(int)
+		mlngIterations = utils.FlipIterations.Value
 	case "variable":
-		mlngVarsChanged = pITestCount.(int)
+		mlngVarsChanged = utils.FlipVariables.Value
 	case "time":
-		mtimStartTime = time.Now()
-		mdurDurationNs = time.Duration(pITestCount.(float64) * math.Pow(10, 9))
+		mtimStartTime = utils.FlipTime.Value
+		mdurDurationNs = utils.FlipDuration.Value
 	default:
 		log.Fatal("Must use a valid test type: 'iteration', 'variable', 'time'")
 	}
 	var flipData []Iteration
-	for _, errRate := range parrErrRates {
+	arrErrRates, _ := config.AtoF64Arr(utils.FlipRates.Value)
+	for _, errRate := range arrErrRates {
 		Rate := ErrorRate{errRate, flipData}
 		(*pOutput).Data = append(pOutput.Data, Rate)
 	}
@@ -146,12 +147,12 @@ func (jsonOut *Output) BitFlip(pbigNum *big.Int) *big.Int {
 			mlngCounter = 0
 		}
 	default:
-		if time.Since(mtimStartTime) >= mdurDurationNs {
+		if time.Since(time.Unix(mtimStartTime, 0)) >= mdurDurationNs {
 			if mintRateIndex == len((*jsonOut).Data)-1 {
 				return pbigNum
 			}
 			mintRateIndex++
-			mtimStartTime = time.Now()
+			mtimStartTime = time.Now().Unix()
 		}
 	}
 
@@ -241,25 +242,4 @@ func (jsonOut Output) PostAPI(url string) int {
 		log.Fatal(err)
 	}
 	return res.StatusCode
-}
-
-// TODO: Implement or Change to encoding/json
-func getState(cfg *Config, cfgPath string) {
-	path := filepath.Dir(cfgPath)
-	fileType := filepath.Ext(cfgPath)
-	fileName := filepath.Base(cfgPath)
-
-	viper.SetConfigName(fileName[0 : len(fileName)-len(fileType)])
-	viper.SetConfigType(fileType[1:])
-	viper.AddConfigPath(path)
-
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			fmt.Println("The file could not be found... try again?")
-			//TODO: Add a recursive call for filepath?
-		} else {
-			log.Fatal(err)
-		}
-	}
-	viper.Unmarshal(cfg)
 }
