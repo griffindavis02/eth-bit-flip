@@ -18,6 +18,7 @@ package injection
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -29,8 +30,6 @@ import (
 	"time"
 
 	"github.com/griffindavis02/eth-bit-flip/config"
-	"github.com/griffindavis02/eth-bit-flip/flags"
-	"gopkg.in/urfave/cli.v1"
 )
 
 type ErrorData struct {
@@ -60,7 +59,6 @@ type Output struct {
 
 var (
 	cfg config.Config
-	marrErrRates []float64
 )
 
 // Set up the testing environment with the test type, number of
@@ -70,14 +68,17 @@ var (
 // 'iteration' - increments for each bit flipped
 // 'variable' - increments for each variable, regardless of bits flipped
 // 'time' - checks against passage of time since started
-func initalize(ctx *cli.Context) {
-	cfg = flags.FlagtoConfig(ctx)
+func initalize(cfgPath string) {
+	cfg, err := config.ReadConfig(cfgPath)
+	if err != nil {
+		log.Fatalf("Config initialization error: %v", err)
+	}
+	
 	var (
 		boiler Output
 		flipData []Iteration
 	)
-	marrErrRates, _ = config.AtoF64Arr(ctx.GlobalString(flags.FlipRates.Name))
-	for _, decErrRate := range marrErrRates {
+	for _, decErrRate := range cfg.State.ErrorRates {
 		Rate := ErrorRate{decErrRate, flipData}
 		boiler.Data = append(boiler.Data, Rate)
 	}
@@ -90,59 +91,71 @@ func initalize(ctx *cli.Context) {
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
 // TODO : use interface to accept multiple data types
-func BitFlip(pIFlipee interface{}, ctx *cli.Context) interface{} {
-	if !ctx.GlobalBool(flags.FlipStart.Name) || ctx.GlobalBool(flags.FlipStop.Name) {
-		return pIFlipee
-	}
+func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
+	initalize(cfgPath)
 
 	// Check for out of bounds or end of error rate
 	switch cfg.State.TestType {
 	case "iteration":
 		if cfg.State.TestCounter >= cfg.State.Iterations {
-			if cfg.State.RateIndex == len(marrErrRates)-1 {
-				ctx.GlobalSet(flags.FlipStop.Name, "true")
+			if cfg.State.RateIndex == len(cfg.State.ErrorRates)-1 {
+				return pIFlipee
 			}
 			cfg.State.RateIndex++
 			cfg.State.TestCounter = 0
 		}
 	case "variable":
 		if cfg.State.TestCounter >= cfg.State.VariablesChanged {
-			if cfg.State.RateIndex == len(marrErrRates)-1 {
-				ctx.GlobalSet(flags.FlipStop.Name, "true")
+			if cfg.State.RateIndex == len(cfg.State.ErrorRates)-1 {
+				return pIFlipee
 			}
 			cfg.State.RateIndex++
 			cfg.State.TestCounter = 0
 		}
 	default:
 		if time.Since(time.Unix(cfg.State.StartTime, 0)) >= cfg.State.Duration {
-			if cfg.State.RateIndex == len(marrErrRates)-1 {
-				ctx.GlobalSet(flags.FlipStop.Name, "true")
+			if cfg.State.RateIndex == len(cfg.State.ErrorRates)-1 {
+				return pIFlipee
 			}
 			cfg.State.RateIndex++
 			cfg.State.StartTime = time.Now().Unix()
 		}
 	}
-
-	initalize(ctx)
 	rand.Seed(time.Now().UnixNano())
 
 	switch pIFlipee.(type) {
 	case string:
-		iteration := flipBytes([]byte(pIFlipee.(string)), ctx)
+		iteration := flipBytes([]byte(pIFlipee.(string)))
 		iteration.ErrorData.PreviousValue = iteration.ErrorData.PreviousValue.(string)
 		iteration.ErrorData.ErrorValue = iteration.ErrorData.ErrorValue.(string)
 		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(string)
 		printOut(iteration)
 		return iteration.ErrorData.ErrorValue
 	case int:
-		iteration := flipBytes([]byte(pIFlipee.(string)), ctx)
-		iteration.ErrorData.PreviousValue = iteration.ErrorData.PreviousValue.(int)
-		iteration.ErrorData.ErrorValue = iteration.ErrorData.ErrorValue.(int)
-		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(int)
+		var iteration Iteration
+		switch binary.Size(pIFlipee.(int)) {
+		case 32:
+			bytInt := make([]byte, 32)
+			binary.BigEndian.PutUint32(bytInt, uint32(pIFlipee.(int)))
+			iteration = flipBytes(bytInt)
+
+			iteration.ErrorData.PreviousValue = int(binary.BigEndian.Uint32(iteration.ErrorData.PreviousValue.([]byte)))
+			iteration.ErrorData.ErrorValue = int(binary.BigEndian.Uint32(iteration.ErrorData.ErrorValue.([]byte)))
+			iteration.ErrorData.DeltaValue = int(binary.BigEndian.Uint32(iteration.ErrorData.DeltaValue.([]byte)))
+		default:
+			bytInt := make([]byte, 64)
+			binary.BigEndian.PutUint64(bytInt, uint64(pIFlipee.(int)))
+			iteration = flipBytes(bytInt)
+
+			iteration.ErrorData.PreviousValue = int(binary.BigEndian.Uint64(iteration.ErrorData.PreviousValue.([]byte)))
+			iteration.ErrorData.ErrorValue = int(binary.BigEndian.Uint64(iteration.ErrorData.ErrorValue.([]byte)))
+			iteration.ErrorData.DeltaValue = int(binary.BigEndian.Uint64(iteration.ErrorData.DeltaValue.([]byte)))
+		}
+
 		printOut(iteration)
 		return iteration.ErrorData.ErrorValue
 	default: // case *big.Int:
-		iteration := flipBytes([]byte(pIFlipee.(string)), ctx)
+		iteration := flipBytes([]byte(pIFlipee.(string)))
 		iteration.ErrorData.PreviousValue = *big.NewInt(0).SetBytes(iteration.ErrorData.PreviousValue.([]byte))
 		iteration.ErrorData.ErrorValue = *big.NewInt(0).SetBytes(iteration.ErrorData.ErrorValue.([]byte))
 		iteration.ErrorData.DeltaValue = *big.NewInt(0).SetBytes(iteration.ErrorData.DeltaValue.([]byte))
@@ -177,8 +190,8 @@ func postAPI(url string, jsonOut interface{}) int {
 	return res.StatusCode
 }
 
-func flipBytes(pbytFlipee []byte, ctx *cli.Context) Iteration {
-	decRate := marrErrRates[cfg.State.RateIndex]
+func flipBytes(pbytFlipee []byte) Iteration {
+	decRate := cfg.State.ErrorRates[cfg.State.RateIndex]
 	var arrBits []int
 	var iteration Iteration
 
@@ -207,7 +220,7 @@ func flipBytes(pbytFlipee []byte, ctx *cli.Context) Iteration {
 		}
 		// Build error data
 		iteration = Iteration{
-			marrErrRates[cfg.State.RateIndex],
+			cfg.State.ErrorRates[cfg.State.RateIndex],
 			int(lngPrevCounter),
 			ErrorData{
 				bytPrevFlipee,

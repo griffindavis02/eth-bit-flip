@@ -16,7 +16,7 @@ var (
 	FlipPath = cli.StringFlag{
 		Name:  "flip.path",
 		Usage: "Path to soft error configuration file",
-		Value: config.Path,
+		Value: "", // FIXME: May need to make path in Config public again
 	}
 
 	FlipStart = cli.BoolFlag{
@@ -76,11 +76,11 @@ var (
 		Value: config.DefaultConfig.State.RateIndex,
 	}
 
-	FlipRates = cli.StringFlag{
-		Name:  "flip.error_rates",
-		Usage: "String of error rates to iterate through",
-		Value: config.DefaultConfig.State.ErrorRates,
-	}
+	// FlipRates = cli.StringFlag{
+	// 	Name:  "flip.error_rates",
+	// 	Usage: "String of error rates to iterate through",
+	// 	Value: config.DefaultConfig.State.ErrorRates,
+	// }
 
 	FlipPost = cli.BoolFlag{
 		Name:  "flip.post",
@@ -106,7 +106,7 @@ func FlagtoConfig(ctx *cli.Context) config.Config {
 		cfg.State.Duration = ctx.GlobalDuration(FlipDuration.Name)
 		cfg.State.StartTime = ctx.GlobalInt64(FlipTime.Name)
 		cfg.State.RateIndex = ctx.GlobalInt(FlipRate.Name)
-		cfg.State.ErrorRates = ctx.GlobalString(FlipRates.Name)
+		// cfg.State.ErrorRates = ctx.GlobalString(FlipRates.Name)
 
 		cfg.Server.Post = ctx.GlobalBool(FlipPost.Name)
 		cfg.Server.Host = ctx.GlobalString(FlipHost.Name)
