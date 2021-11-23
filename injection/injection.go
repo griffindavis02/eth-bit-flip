@@ -83,7 +83,7 @@ func initalize(cfgPath string) {
 		boiler.Data = append(boiler.Data, Rate)
 	}
 	if cfg.Server.Post {
-		postAPI(cfg.Server.Host + "/initialize", boiler)
+		postAPI(cfg.Server.Host, boiler)
 	}
 }
 
@@ -155,7 +155,7 @@ func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
 		printOut(iteration)
 		return iteration.ErrorData.ErrorValue
 	default: // case *big.Int:
-		iteration := flipBytes([]byte(pIFlipee.(string)))
+		iteration := flipBytes(pIFlipee.(*big.Int).Bytes())
 		iteration.ErrorData.PreviousValue = *big.NewInt(0).SetBytes(iteration.ErrorData.PreviousValue.([]byte))
 		iteration.ErrorData.ErrorValue = *big.NewInt(0).SetBytes(iteration.ErrorData.ErrorValue.([]byte))
 		iteration.ErrorData.DeltaValue = *big.NewInt(0).SetBytes(iteration.ErrorData.DeltaValue.([]byte))
