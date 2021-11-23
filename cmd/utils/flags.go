@@ -67,7 +67,6 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/netutil"
 	"github.com/ethereum/go-ethereum/params"
 	pcsclite "github.com/gballet/go-libpcsclite"
-	bitflip "github.com/griffindavis02/eth-bit-flip/flags"
 	gopsutil "github.com/shirou/gopsutil/mem"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -781,38 +780,6 @@ var (
 		Name:  "catalyst",
 		Usage: "Catalyst mode (eth2 integration testing)",
 	}
-
-	// Flags for simulating soft errors in the blockchain
-	// TODO: Add flag declarations to main.go
-	FlipInitialized = bitflip.FlipInitialized
-
-	FlipPath = bitflip.FlipPath
-
-	FlipStart = bitflip.FlipStart
-
-	FlipStop = bitflip.FlipStop
-
-	FlipRestart = bitflip.FlipRestart
-
-	FlipType = bitflip.FlipType
-
-	FlipCounter = bitflip.FlipCounter
-
-	FlipIterations = bitflip.FlipIterations
-
-	FlipVariables = bitflip.FlipVariables
-
-	FlipDuration = bitflip.FlipDuration
-
-	FlipTime = bitflip.FlipTime
-
-	FlipRate = bitflip.FlipRate
-
-	FlipRates = bitflip.FlipRates
-
-	FlipPost = bitflip.FlipPost
-
-	FlipHost = bitflip.FlipHost
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
