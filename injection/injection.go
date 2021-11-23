@@ -68,7 +68,7 @@ var (
 // 'iteration' - increments for each bit flipped
 // 'variable' - increments for each variable, regardless of bits flipped
 // 'time' - checks against passage of time since started
-func initalize(cfgPath string) {
+func initalize(cfgPath string) config.Config {
 	cfg, err := config.ReadConfig(cfgPath)
 	if err != nil {
 		log.Fatalf("Config initialization error: %v", err)
@@ -85,6 +85,8 @@ func initalize(cfgPath string) {
 	if cfg.Server.Post {
 		postAPI(cfg.Server.Host, boiler)
 	}
+
+	return cfg
 }
 
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
@@ -92,7 +94,7 @@ func initalize(cfgPath string) {
 // and the iteration error data will be returned.
 // TODO : use interface to accept multiple data types
 func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
-	initalize(cfgPath)
+	cfg = initalize(cfgPath)
 
 	// Check for out of bounds or end of error rate
 	switch cfg.State.TestType {
@@ -123,81 +125,66 @@ func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
 	}
 	rand.Seed(time.Now().UnixNano())
 
+	var iteration Iteration
 	switch pIFlipee.(type) {
 	case string:
-		iteration := flipBytes([]byte(pIFlipee.(string)))
-		iteration.ErrorData.PreviousValue = iteration.ErrorData.PreviousValue.(string)
-		iteration.ErrorData.ErrorValue = iteration.ErrorData.ErrorValue.(string)
-		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(string)
-		printOut(iteration)
-		return iteration.ErrorData.ErrorValue
+		iteration = flipBytes([]byte(pIFlipee.(string)), cfgPath)
+		if iteration.ErrorData.ErrorValue == nil {
+			return pIFlipee
+		}
+
+		iteration.ErrorData.PreviousValue = string(iteration.ErrorData.PreviousValue.([]byte))
+		iteration.ErrorData.ErrorValue = string(iteration.ErrorData.ErrorValue.([]byte))
+		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
 	case int:
 		var iteration Iteration
 		switch binary.Size(pIFlipee.(int)) {
 		case 32:
 			bytInt := make([]byte, 32)
 			binary.BigEndian.PutUint32(bytInt, uint32(pIFlipee.(int)))
-			iteration = flipBytes(bytInt)
+			iteration = flipBytes(bytInt, cfgPath)
+			if iteration.ErrorData.ErrorValue == nil {
+				return pIFlipee
+			}
 
 			iteration.ErrorData.PreviousValue = int(binary.BigEndian.Uint32(iteration.ErrorData.PreviousValue.([]byte)))
 			iteration.ErrorData.ErrorValue = int(binary.BigEndian.Uint32(iteration.ErrorData.ErrorValue.([]byte)))
-			iteration.ErrorData.DeltaValue = int(binary.BigEndian.Uint32(iteration.ErrorData.DeltaValue.([]byte)))
+			iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
 		default:
 			bytInt := make([]byte, 64)
 			binary.BigEndian.PutUint64(bytInt, uint64(pIFlipee.(int)))
-			iteration = flipBytes(bytInt)
+			iteration = flipBytes(bytInt, cfgPath)
+			if iteration.ErrorData.ErrorValue == nil {
+				return pIFlipee
+			}
 
 			iteration.ErrorData.PreviousValue = int(binary.BigEndian.Uint64(iteration.ErrorData.PreviousValue.([]byte)))
 			iteration.ErrorData.ErrorValue = int(binary.BigEndian.Uint64(iteration.ErrorData.ErrorValue.([]byte)))
-			iteration.ErrorData.DeltaValue = int(binary.BigEndian.Uint64(iteration.ErrorData.DeltaValue.([]byte)))
+			iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
 		}
-
-		printOut(iteration)
-		return iteration.ErrorData.ErrorValue
-	default: // case *big.Int:
-		iteration := flipBytes(pIFlipee.(*big.Int).Bytes())
-		iteration.ErrorData.PreviousValue = *big.NewInt(0).SetBytes(iteration.ErrorData.PreviousValue.([]byte))
-		iteration.ErrorData.ErrorValue = *big.NewInt(0).SetBytes(iteration.ErrorData.ErrorValue.([]byte))
-		iteration.ErrorData.DeltaValue = *big.NewInt(0).SetBytes(iteration.ErrorData.DeltaValue.([]byte))
-		printOut(iteration)
-		return iteration.ErrorData.ErrorValue
-	}
-}
-
-func printOut(iteration Iteration) {
-	bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
-		fmt.Println(string(bytJSON))
-		if cfg.Server.Post {
-			postAPI(cfg.Server.Host, iteration)
+	case *big.Int:
+		iteration = flipBytes(pIFlipee.(*big.Int).Bytes(), cfgPath)
+		if iteration.ErrorData.ErrorValue == nil {
+			return pIFlipee
 		}
+		iteration.ErrorData.PreviousValue = new(big.Int).SetBytes(iteration.ErrorData.PreviousValue.([]byte))
+		iteration.ErrorData.ErrorValue = new(big.Int).SetBytes(iteration.ErrorData.ErrorValue.([]byte))
+		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
+	}
+
+	printOut(iteration)
+	return iteration.ErrorData.ErrorValue
 }
 
-func postAPI(url string, jsonOut interface{}) int {
-	client := http.Client{}
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	query := req.URL.Query()
-	params, _ := json.Marshal(jsonOut)
-	query.Add("params", string(params))
-	req.URL.RawQuery = query.Encode()
-
-	res, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return res.StatusCode
-}
-
-func flipBytes(pbytFlipee []byte) Iteration {
+func flipBytes(pbytFlipee []byte, cfgPath string) Iteration {
 	decRate := cfg.State.ErrorRates[cfg.State.RateIndex]
 	var arrBits []int
 	var iteration Iteration
 
 	// Store previous states
 	lngPrevCounter := cfg.State.TestCounter
-	var bytPrevFlipee = pbytFlipee
+	var bytPrevFlipee []byte
+	bytPrevFlipee = append(bytPrevFlipee, pbytFlipee...)
 	intLastByte := len(pbytFlipee) - 1
 
 	// Run chance of flipping a bit in byte representation
@@ -227,13 +214,45 @@ func flipBytes(pbytFlipee []byte) Iteration {
 				"0x" + hex.EncodeToString(bytPrevFlipee),
 				arrBits,
 				pbytFlipee,
-				"0x" + hex.EncodeToString(bytPrevFlipee),
+				"0x" + hex.EncodeToString(pbytFlipee),
 				big.NewInt(0).Sub(big.NewInt(0).SetBytes(pbytFlipee),
 					big.NewInt(0).SetBytes(bytPrevFlipee)),
 				time.Now().Format("01-02-2006 15:04:05.000000000"),
 			},
 		}
+
+		config.WriteConfig(cfgPath, cfg)
 	}
 	
 	return iteration
+}
+
+func printOut(iteration Iteration) {
+	if iteration.ErrorData.PreviousValue == iteration.ErrorData.ErrorValue {
+		return
+	}
+	// TODO: Look for logging boolean before printing?
+	bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
+		fmt.Println(string(bytJSON)+",")
+		if cfg.Server.Post {
+			postAPI(cfg.Server.Host, iteration)
+		}
+}
+
+func postAPI(url string, jsonOut interface{}) int {
+	client := http.Client{}
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	query := req.URL.Query()
+	params, _ := json.Marshal(jsonOut)
+	query.Add("params", string(params))
+	req.URL.RawQuery = query.Encode()
+
+	res, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return res.StatusCode
 }

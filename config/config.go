@@ -295,8 +295,6 @@ func WriteConfig(path string, cfg Config) error {
 		if fErr := os.WriteFile(path, bytCfg, 0644); fErr != nil {
 			return fmt.Errorf("error writing to file \"%s\"", path)
 		}
-		fmt.Println("\nYou've configured your next soft error injection test! Here is your configuration:")
-		fmt.Println(string(bytCfg))
 		return nil
 	}
 	return fmt.Errorf("error marshaling config")
