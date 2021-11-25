@@ -39,7 +39,7 @@ type State struct {
 	Duration         time.Duration `json:"duration"`
 	StartTime        int64         `json:"start_time"`
 	RateIndex        int           `json:"rate_index"`
-	ErrorRates       []float64        `json:"error_rates"`
+	ErrorRates       []float64     `json:"error_rates"`
 }
 
 type Server struct {
@@ -120,10 +120,10 @@ func flipWizard(ctx *cli.Context) {
 
 	var testType string
 	for {
-		fmt.Println("What type of test will this be? Iteration, variable, or time based?")
-		testType = strings.ToLower(promptInput("Iteration counts per bit flipped.\nVariable counts per variable enacted upon.\nTime counts... well based on time."))
+		fmt.Println("What type of test will this be? Bit, variable, or time based?")
+		testType = strings.ToLower(promptInput("Bit counts per bit flipped.\nVariable counts per variable enacted upon.\nTime counts... well based on time."))
 
-		if strings.Compare(testType, "iteration") == 0 ||
+		if strings.Compare(testType, "bit") == 0 ||
 			strings.Compare(testType, "variable") == 0 ||
 			strings.Compare(testType, "time") == 0 {
 			cfg.State.TestType = testType
@@ -133,8 +133,8 @@ func flipWizard(ctx *cli.Context) {
 	}
 
 	switch testType {
-	case "iteration":
-		cfg.State.Iterations = promptIntCB("How many iterations per error rate?",
+	case "bit":
+		cfg.State.Iterations = promptIntCB("How many bits per error rate?",
 			func(input int) (int, error) {
 				if input >= 0 {
 					return input, nil
@@ -161,7 +161,7 @@ func flipWizard(ctx *cli.Context) {
 					} else {
 						return -1, fmt.Errorf("received invalid duration of %d seconds", input)
 					}
-				}))  * math.Pow(10, 9), // nanoseconds
+				})) * math.Pow(10, 9), // nanoseconds
 		)
 		cfg.State.StartTime = time.Now().Unix()
 	}

@@ -43,62 +43,28 @@ type ErrorData struct {
 }
 
 type Iteration struct {
-	Rate float64
+	Rate         float64
 	IterationNum int
 	ErrorData    ErrorData
-}
-
-type ErrorRate struct {
-	Rate     float64
-	FlipData []Iteration
-}
-
-type Output struct {
-	Data []ErrorRate
 }
 
 var (
 	cfg config.Config
 )
 
-// Set up the testing environment with the test type, number of
-// changes/iterations or duration in seconds, and error rates. This is
-// PER error rate. i.e. 5 minutes and ten error rates will be 50 minutes.
-// Test types:
-// 'iteration' - increments for each bit flipped
-// 'variable' - increments for each variable, regardless of bits flipped
-// 'time' - checks against passage of time since started
-func initalize(cfgPath string) config.Config {
-	cfg, err := config.ReadConfig(cfgPath)
-	if err != nil {
-		log.Fatalf("Config initialization error: %v", err)
-	}
-	
-	var (
-		boiler Output
-		flipData []Iteration
-	)
-	for _, decErrRate := range cfg.State.ErrorRates {
-		Rate := ErrorRate{decErrRate, flipData}
-		boiler.Data = append(boiler.Data, Rate)
-	}
-	if cfg.Server.Post {
-		postAPI(cfg.Server.Host, boiler)
-	}
-
-	return cfg
-}
-
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
 // TODO : use interface to accept multiple data types
 func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
-	cfg = initalize(cfgPath)
+	cfg, err := config.ReadConfig(cfgPath)
+	if err != nil {
+		log.Fatalf("Config initialization error: %v", err)
+	}
 
 	// Check for out of bounds or end of error rate
 	switch cfg.State.TestType {
-	case "iteration":
+	case "bit":
 		if cfg.State.TestCounter >= cfg.State.Iterations {
 			if cfg.State.RateIndex == len(cfg.State.ErrorRates)-1 {
 				return pIFlipee
@@ -191,7 +157,7 @@ func flipBytes(pbytFlipee []byte, cfgPath string) Iteration {
 	for i := range bytPrevFlipee {
 		for j := 0; j < 8; j++ {
 			if math.Floor(rand.Float64()/decRate) == math.Floor(rand.Float64()/decRate) {
-				if cfg.State.TestType == "iteration" {
+				if cfg.State.TestType == "bit" {
 					cfg.State.TestCounter++
 				}
 				arrBits = append(arrBits, (i*8)+j)
@@ -223,7 +189,7 @@ func flipBytes(pbytFlipee []byte, cfgPath string) Iteration {
 
 		config.WriteConfig(cfgPath, cfg)
 	}
-	
+
 	return iteration
 }
 
@@ -233,10 +199,10 @@ func printOut(iteration Iteration) {
 	}
 	// TODO: Look for logging boolean before printing?
 	bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
-		fmt.Println(string(bytJSON)+",")
-		if cfg.Server.Post {
-			postAPI(cfg.Server.Host, iteration)
-		}
+	fmt.Println(string(bytJSON) + ",")
+	if cfg.Server.Post {
+		postAPI(cfg.Server.Host, iteration)
+	}
 }
 
 func postAPI(url string, jsonOut interface{}) int {
