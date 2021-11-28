@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License along with
 // the eth-bit-flip library. If not, see <https://www.gnu.org/licenses/>.
 
-package config
+package main
 
 import (
 	"bufio"
