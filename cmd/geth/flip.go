@@ -11,7 +11,7 @@ var (
 		Action:   utils.MigrateFlags(setStatus),
 		Name:     "flip",
 		Usage:    "Handle the bit flipping environment set up with the 'flipconfig' CLI",
-		Flags:    []cli.Flag{utils.FlipPath, utils.FlipStart, utils.FlipStop, utils.FlipRestart}, // change to flip flags
+		Flags:    []cli.Flag{utils.FlipStart, utils.FlipStop, utils.FlipRestart}, // change to flip flags
 		Category: "CONSOLE COMMANDS",
 		Description: `
 This command allows you to start soft error simulation on a running node. See

@@ -782,12 +782,6 @@ var (
 	}
 
 	// Flags for simulating soft errors in the blockchain
-	FlipPath = cli.StringFlag{
-		Name:  "flippath",
-		Usage: "Path to soft error configuration file",
-		Value: "../flipconfig/flipconfig.json", // FIXME: May need to make path in Config public again
-	}
-
 	FlipStart = cli.BoolFlag{
 		Name:  "flipstart",
 		Usage: "Start the soft error simulation",

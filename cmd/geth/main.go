@@ -197,7 +197,6 @@ var (
 	}
 
 	flipFlags = []cli.Flag{
-		utils.FlipPath,
 		utils.FlipStart,
 		utils.FlipStop,
 		utils.FlipRestart,
