@@ -48,24 +48,22 @@ type Iteration struct {
 	ErrorData    ErrorData
 }
 
-var (
-	cfg config.Config
-)
-
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
-// TODO : use interface to accept multiple data types
-func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
-	cfg, err := config.ReadConfig(cfgPath)
-	if err != nil {
-		log.Fatalf("Config initialization error: %v", err)
+// TODO : see about storing path in the cfg for the write operation
+func BitFlip(pIFlipee interface{}, cfg *config.Config) interface{} {
+	if !cfg.Start {
+		return pIFlipee
+	}
+	if cfg.Restart {
+		restart(cfg)
 	}
 
 	// Check for out of bounds or end of error rate
 	switch cfg.State.TestType {
 	case "bit":
-		if cfg.State.TestCounter >= cfg.State.Iterations {
+		if cfg.State.TestCounter >= cfg.State.Bits {
 			if cfg.State.RateIndex == len(cfg.State.ErrorRates)-1 {
 				return pIFlipee
 			}
@@ -89,12 +87,11 @@ func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
 			cfg.State.StartTime = time.Now().Unix()
 		}
 	}
-	rand.Seed(time.Now().UnixNano())
 
 	var iteration Iteration
 	switch pIFlipee.(type) {
 	case string:
-		iteration = flipBytes([]byte(pIFlipee.(string)), cfgPath)
+		iteration = flipBytes([]byte(pIFlipee.(string)), cfg)
 		if iteration.ErrorData.ErrorValue == nil {
 			return pIFlipee
 		}
@@ -103,12 +100,11 @@ func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
 		iteration.ErrorData.ErrorValue = string(iteration.ErrorData.ErrorValue.([]byte))
 		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
 	case int:
-		var iteration Iteration
 		switch binary.Size(pIFlipee.(int)) {
 		case 32:
-			bytInt := make([]byte, 32)
+			bytInt := make([]byte, 4)
 			binary.BigEndian.PutUint32(bytInt, uint32(pIFlipee.(int)))
-			iteration = flipBytes(bytInt, cfgPath)
+			iteration = flipBytes(bytInt, cfg)
 			if iteration.ErrorData.ErrorValue == nil {
 				return pIFlipee
 			}
@@ -117,9 +113,9 @@ func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
 			iteration.ErrorData.ErrorValue = int(binary.BigEndian.Uint32(iteration.ErrorData.ErrorValue.([]byte)))
 			iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
 		default:
-			bytInt := make([]byte, 64)
+			bytInt := make([]byte, 8)
 			binary.BigEndian.PutUint64(bytInt, uint64(pIFlipee.(int)))
-			iteration = flipBytes(bytInt, cfgPath)
+			iteration = flipBytes(bytInt, cfg)
 			if iteration.ErrorData.ErrorValue == nil {
 				return pIFlipee
 			}
@@ -128,8 +124,77 @@ func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
 			iteration.ErrorData.ErrorValue = int(binary.BigEndian.Uint64(iteration.ErrorData.ErrorValue.([]byte)))
 			iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
 		}
+	case int64:
+		bytInt := make([]byte, 8)
+		binary.BigEndian.PutUint64(bytInt, uint64(pIFlipee.(int64)))
+		iteration = flipBytes(bytInt, cfg)
+		if iteration.ErrorData.ErrorValue == nil {
+			return pIFlipee
+		}
+
+		iteration.ErrorData.PreviousValue = int64(binary.BigEndian.Uint64(iteration.ErrorData.PreviousValue.([]byte)))
+		iteration.ErrorData.ErrorValue = int64(binary.BigEndian.Uint64(iteration.ErrorData.ErrorValue.([]byte)))
+		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
+	case int32:
+		bytInt := make([]byte, 4)
+		binary.BigEndian.PutUint32(bytInt, uint32(pIFlipee.(int32)))
+		iteration = flipBytes(bytInt, cfg)
+		if iteration.ErrorData.ErrorValue == nil {
+			return pIFlipee
+		}
+
+		iteration.ErrorData.PreviousValue = int32(binary.BigEndian.Uint32(iteration.ErrorData.PreviousValue.([]byte)))
+		iteration.ErrorData.ErrorValue = int32(binary.BigEndian.Uint32(iteration.ErrorData.ErrorValue.([]byte)))
+		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
+	case uint:
+		switch binary.Size(pIFlipee.(uint)) {
+		case 32:
+			bytInt := make([]byte, 4)
+			binary.BigEndian.PutUint32(bytInt, uint32(pIFlipee.(uint)))
+			iteration = flipBytes(bytInt, cfg)
+			if iteration.ErrorData.ErrorValue == nil {
+				return pIFlipee
+			}
+
+			iteration.ErrorData.PreviousValue = uint(binary.BigEndian.Uint32(iteration.ErrorData.PreviousValue.([]byte)))
+			iteration.ErrorData.ErrorValue = uint(binary.BigEndian.Uint32(iteration.ErrorData.ErrorValue.([]byte)))
+			iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
+		default:
+			bytInt := make([]byte, 8)
+			binary.BigEndian.PutUint64(bytInt, uint64(pIFlipee.(uint)))
+			iteration = flipBytes(bytInt, cfg)
+			if iteration.ErrorData.ErrorValue == nil {
+				return pIFlipee
+			}
+
+			iteration.ErrorData.PreviousValue = uint(binary.BigEndian.Uint64(iteration.ErrorData.PreviousValue.([]byte)))
+			iteration.ErrorData.ErrorValue = uint(binary.BigEndian.Uint64(iteration.ErrorData.ErrorValue.([]byte)))
+			iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
+		}
+	case uint32:
+		bytInt := make([]byte, 4)
+		binary.BigEndian.PutUint32(bytInt, uint32(pIFlipee.(uint32)))
+		iteration = flipBytes(bytInt, cfg)
+		if iteration.ErrorData.ErrorValue == nil {
+			return pIFlipee
+		}
+
+		iteration.ErrorData.PreviousValue = uint32(binary.BigEndian.Uint32(iteration.ErrorData.PreviousValue.([]byte)))
+		iteration.ErrorData.ErrorValue = uint32(binary.BigEndian.Uint32(iteration.ErrorData.ErrorValue.([]byte)))
+		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
+	case uint64:
+		bytInt := make([]byte, 8)
+		binary.BigEndian.PutUint64(bytInt, uint64(pIFlipee.(uint64)))
+		iteration = flipBytes(bytInt, cfg)
+		if iteration.ErrorData.ErrorValue == nil {
+			return pIFlipee
+		}
+
+		iteration.ErrorData.PreviousValue = uint64(binary.BigEndian.Uint64(iteration.ErrorData.PreviousValue.([]byte)))
+		iteration.ErrorData.ErrorValue = uint64(binary.BigEndian.Uint64(iteration.ErrorData.ErrorValue.([]byte)))
+		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
 	case *big.Int:
-		iteration = flipBytes(pIFlipee.(*big.Int).Bytes(), cfgPath)
+		iteration = flipBytes(pIFlipee.(*big.Int).Bytes(), cfg)
 		if iteration.ErrorData.ErrorValue == nil {
 			return pIFlipee
 		}
@@ -138,11 +203,11 @@ func BitFlip(pIFlipee interface{}, cfgPath string) interface{} {
 		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
 	}
 
-	printOut(iteration)
+	printOut(iteration, cfg)
 	return iteration.ErrorData.ErrorValue
 }
 
-func flipBytes(pbytFlipee []byte, cfgPath string) Iteration {
+func flipBytes(pbytFlipee []byte, cfg *config.Config) Iteration {
 	decRate := cfg.State.ErrorRates[cfg.State.RateIndex]
 	var arrBits []int
 	var iteration Iteration
@@ -154,6 +219,7 @@ func flipBytes(pbytFlipee []byte, cfgPath string) Iteration {
 	intLastByte := len(pbytFlipee) - 1
 
 	// Run chance of flipping a bit in byte representation
+	rand.Seed(time.Now().UnixNano())
 	for i := range bytPrevFlipee {
 		for j := 0; j < 8; j++ {
 			if math.Floor(rand.Float64()/decRate) == math.Floor(rand.Float64()/decRate) {
@@ -168,6 +234,7 @@ func flipBytes(pbytFlipee []byte, cfgPath string) Iteration {
 
 	// Ensure there was a change
 	if !bytes.Equal(pbytFlipee, bytPrevFlipee) {
+		fmt.Println("Decrate:", decRate)
 		if cfg.State.TestType == "variable" {
 			cfg.State.TestCounter++
 		}
@@ -187,13 +254,20 @@ func flipBytes(pbytFlipee []byte, cfgPath string) Iteration {
 			},
 		}
 
-		config.WriteConfig(cfgPath, cfg)
+		// config.WriteConfig(cfg, cfg)
 	}
 
 	return iteration
 }
 
-func printOut(iteration Iteration) {
+func restart(cfg *config.Config) {
+	cfg.State.TestCounter = 0
+	cfg.State.RateIndex = 0
+	cfg.Start = true
+	cfg.Restart = false
+}
+
+func printOut(iteration Iteration, cfg *config.Config) {
 	if iteration.ErrorData.PreviousValue == iteration.ErrorData.ErrorValue {
 		return
 	}
