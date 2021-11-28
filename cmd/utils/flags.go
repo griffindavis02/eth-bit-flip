@@ -780,6 +780,28 @@ var (
 		Name:  "catalyst",
 		Usage: "Catalyst mode (eth2 integration testing)",
 	}
+
+	// Flags for simulating soft errors in the blockchain
+	FlipPath = cli.StringFlag{
+		Name:  "flippath",
+		Usage: "Path to soft error configuration file",
+		Value: "../flipconfig/flipconfig.json", // FIXME: May need to make path in Config public again
+	}
+
+	FlipStart = cli.BoolFlag{
+		Name:  "flipstart",
+		Usage: "Start the soft error simulation",
+	}
+
+	FlipStop = cli.BoolFlag{
+		Name:  "flipstop",
+		Usage: "Stop the soft error simulation",
+	}
+
+	FlipRestart = cli.BoolFlag{
+		Name:  "fliprestart",
+		Usage: "Restart the soft error simulation, discarding current results",
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating

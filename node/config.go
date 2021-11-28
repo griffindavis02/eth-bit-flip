@@ -32,6 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/griffindavis02/eth-bit-flip/config"
 )
 
 const (
@@ -190,6 +191,9 @@ type Config struct {
 
 	// AllowUnprotectedTxs allows non EIP-155 protected transactions to be send over RPC.
 	AllowUnprotectedTxs bool `toml:",omitempty"`
+
+	// Config for bit flipping simulations
+	FlipConfig config.Config
 }
 
 // IPCEndpoint resolves an IPC endpoint based on a configured value, taking into

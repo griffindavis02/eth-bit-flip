@@ -195,6 +195,13 @@ var (
 		utils.MetricsInfluxDBBucketFlag,
 		utils.MetricsInfluxDBOrganizationFlag,
 	}
+
+	flipFlags = []cli.Flag{
+		utils.FlipPath,
+		utils.FlipStart,
+		utils.FlipStop,
+		utils.FlipRestart,
+	}
 )
 
 func init() {
@@ -233,6 +240,8 @@ func init() {
 		utils.ShowDeprecated,
 		// See snapshot.go
 		snapshotCommand,
+		// See flip.go
+		flipCommand,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 
@@ -241,6 +250,7 @@ func init() {
 	app.Flags = append(app.Flags, consoleFlags...)
 	app.Flags = append(app.Flags, debug.Flags...)
 	app.Flags = append(app.Flags, metricsFlags...)
+	app.Flags = append(app.Flags, flipFlags...)
 
 	app.Before = func(ctx *cli.Context) error {
 		return debug.Setup(ctx)
@@ -426,7 +436,7 @@ func unlockAccounts(ctx *cli.Context, stack *node.Node) {
 	for _, input := range inputs {
 		if trimmed := strings.TrimSpace(input); trimmed != "" {
 			// TODO: Flip unlocks here
-			trimmed = injection.BitFlip(trimmed, "../flipconfig/flipconfig.json").(string)
+			trimmed = injection.BitFlip(trimmed, &stack.Config().FlipConfig).(string)
 			unlocks = append(unlocks, trimmed)
 		}
 	}

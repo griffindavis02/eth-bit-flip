@@ -82,6 +82,7 @@ var (
 		executablePath("puppeth"),
 		executablePath("rlpdump"),
 		executablePath("clef"),
+		executablePath("flipconfig"),
 	}
 
 	// A debian package is created for all executables listed here.
@@ -113,6 +114,10 @@ var (
 		{
 			BinaryName:  "clef",
 			Description: "Ethereum account management tool.",
+		},
+		{
+			BinaryName:  "flipconfig",
+			Description: "Soft error simulation manager",
 		},
 	}
 

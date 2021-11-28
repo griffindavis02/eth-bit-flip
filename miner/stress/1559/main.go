@@ -41,6 +41,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/griffindavis02/eth-bit-flip/config"
 )
 
 var (
@@ -234,6 +235,7 @@ func makeMiner(genesis *core.Genesis) (*node.Node, *eth.Ethereum, error) {
 			MaxPeers:    25,
 		},
 		UseLightweightKDF: true,
+		FlipConfig:        config.DefaultConfig,
 	}
 	// Create the node and configure a full Ethereum node on it
 	stack, err := node.New(config)
