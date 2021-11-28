@@ -21,12 +21,9 @@ https://github.com/griffindavis02/eth-bit-flip
 )
 
 func setStatus(ctx *cli.Context) error {
-	var (
-		cfg  config.Config
-		path = ctx.GlobalString(utils.FlipPath.Name)
-	)
+	var cfg  config.Config
 
-	cfg, err := config.ReadConfig(path)
+	cfg, err := config.ReadConfig()
 	if err != nil {
 		utils.Fatalf("Failed to read in the error injection confguration file:", err)
 	}
@@ -46,7 +43,7 @@ func setStatus(ctx *cli.Context) error {
 		cfg.Restart = false
 	}
 
-	config.WriteConfig(path, cfg)
+	config.WriteConfig(cfg)
 
 	return nil
 }

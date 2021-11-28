@@ -138,7 +138,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 
 	// Add bit flipping configuration
 	if ctx.GlobalBool(utils.FlipStart.Name) {
-		if flipConfig, err := config.ReadConfig(utils.FlipPath.Value); err == nil {
+		if flipConfig, err := config.ReadConfig(); err == nil {
 			cfg.Node.FlipConfig = flipConfig
 		}
 	}
