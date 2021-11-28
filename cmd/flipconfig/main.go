@@ -95,7 +95,7 @@ var (
 	}
 )
 
-func RunConfig() {
+func main() {
 	app := cli.NewApp()
 	app.Name = "flipcfg"
 	app.Usage = "Set up a soft error test environment for go-ethereum"
