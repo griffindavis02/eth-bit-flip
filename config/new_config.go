@@ -33,7 +33,7 @@ func (cfg *Config) newWizard() error {
 	cfg.promptServer()
 
 	cfg.Initialized = true
-	if err := WriteConfig(*cfg); err != nil {
+	if err := cfg.WriteConfig(); err != nil {
 		log.Fatalf("ERROR: %v", err)
 	} else {
 		if cfgByt, marshErr := json.MarshalIndent(cfg, "", "\t"); marshErr == nil {
