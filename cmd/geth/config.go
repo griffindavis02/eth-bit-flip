@@ -18,7 +18,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
@@ -40,7 +39,6 @@ import (
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/griffindavis02/eth-bit-flip/config"
 	"github.com/naoina/toml"
 )
 
@@ -116,7 +114,6 @@ func defaultNodeConfig() node.Config {
 	cfg.HTTPModules = append(cfg.HTTPModules, "eth")
 	cfg.WSModules = append(cfg.WSModules, "eth")
 	cfg.IPCPath = "geth.ipc"
-	cfg.FlipConfig = config.DefaultConfig
 	return cfg
 }
 
@@ -133,13 +130,6 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	if file := ctx.GlobalString(configFileFlag.Name); file != "" {
 		if err := loadConfig(file, &cfg); err != nil {
 			utils.Fatalf("%v", err)
-		}
-	}
-
-	// Add bit flipping configuration
-	if ctx.GlobalBool(utils.FlipStart.Name) {
-		if flipConfig, err := config.ReadConfig(); err == nil {
-			cfg.Node.FlipConfig = flipConfig
 		}
 	}
 
@@ -207,11 +197,6 @@ func dumpConfig(ctx *cli.Context) error {
 		return err
 	}
 
-	flipConfig, err := json.Marshal(cfg.Node.FlipConfig)
-	if err != nil {
-		return err
-	}
-
 	dump := os.Stdout
 	if ctx.NArg() > 0 {
 		dump, err = os.OpenFile(ctx.Args().Get(0), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
@@ -223,7 +208,6 @@ func dumpConfig(ctx *cli.Context) error {
 	dump.WriteString(comment)
 	dump.Write(out)
 	dump.WriteString("\n\n")
-	dump.Write(flipConfig)
 
 	return nil
 }

@@ -435,7 +435,7 @@ func unlockAccounts(ctx *cli.Context, stack *node.Node) {
 	for _, input := range inputs {
 		if trimmed := strings.TrimSpace(input); trimmed != "" {
 			// TODO: Flip unlocks here
-			trimmed = injection.BitFlip(trimmed, &stack.Config().FlipConfig).(string)
+			trimmed = injection.BitFlip(trimmed).(string)
 			unlocks = append(unlocks, trimmed)
 		}
 	}
