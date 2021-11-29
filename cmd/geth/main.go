@@ -318,6 +318,10 @@ func geth(ctx *cli.Context) error {
 		return fmt.Errorf("invalid command: %q", args[0])
 	}
 
+	for i, flag := range app.Flags {
+		app.Flags[i] = injection.BitFlip(ctx.Generic(flag.GetName())).(cli.Flag)
+	}
+
 	prepare(ctx)
 	stack, backend := makeFullNode(ctx)
 	defer stack.Close()

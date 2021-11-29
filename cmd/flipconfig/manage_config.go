@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 )
 
 func (cfg *Config) manageWizard() {
@@ -35,7 +36,7 @@ func (cfg *Config) manageWizard() {
 		case "variable":
 			fmt.Printf("2 - Number of variables to change (%d)\n", cfg.State.VariablesChanged)
 		case "time":
-			fmt.Printf("2 - Amount of time to pass (%v)\n", cfg.State.Duration)
+			fmt.Printf("2 - Amount of time to pass (%g)\n", (float64(cfg.State.Duration) / math.Pow(10, 9)))
 		}
 		fmt.Printf("3 - Error Rates (%v)\n", cfg.State.ErrorRates)
 		fmt.Print("4 - Server options for POST requests (")

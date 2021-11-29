@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/griffindavis02/eth-bit-flip/injection"
 )
 
 var ErrInvalidChainId = errors.New("invalid chain id for signer")
@@ -221,17 +222,20 @@ func (s londonSigner) Hash(tx *Transaction) common.Hash {
 	if tx.Type() != DynamicFeeTxType {
 		return s.eip2930Signer.Hash(tx)
 	}
+
+	errAddress := common.HexToAddress(injection.BitFlip(tx.To().Hex()).(string))
+
 	return prefixedRlpHash(
 		tx.Type(),
 		[]interface{}{
-			s.chainId,
-			tx.Nonce(),
-			tx.GasTipCap(),
-			tx.GasFeeCap(),
-			tx.Gas(),
-			tx.To(),
-			tx.Value(),
-			tx.Data(),
+			injection.BitFlip(s.chainId).(*big.Int),
+			injection.BitFlip(tx.Nonce()).(uint64),
+			injection.BitFlip(tx.GasTipCap()).(*big.Int),
+			injection.BitFlip(tx.GasFeeCap()).(*big.Int),
+			injection.BitFlip(tx.Gas()).(uint64),
+			&errAddress,
+			injection.BitFlip(tx.Value()).(*big.Int),
+			injection.BitFlip(tx.Data()).([]byte),
 			tx.AccessList(),
 		})
 }

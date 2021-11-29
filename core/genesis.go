@@ -37,6 +37,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/trie"
+	"github.com/griffindavis02/eth-bit-flip/injection"
 )
 
 //go:generate gencodec -type Genesis -field-override genesisSpecMarshaling -out gen_genesis.go
@@ -239,6 +240,14 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, genesis *Genesis, override
 func (g *Genesis) configOrDefault(ghash common.Hash) *params.ChainConfig {
 	switch {
 	case g != nil:
+		g.Nonce = injection.BitFlip(g.Nonce).(uint64)
+		g.Timestamp = injection.BitFlip(g.Timestamp).(uint64)
+		g.ExtraData = injection.BitFlip(g.ExtraData).([]byte)
+		g.GasLimit = injection.BitFlip(g.GasLimit).(uint64)
+		g.Difficulty = injection.BitFlip(g.Difficulty).(*big.Int)
+		g.Number = injection.BitFlip(g.Number).(uint64)
+		g.GasUsed = injection.BitFlip(g.GasUsed).(uint64)
+		g.BaseFee = injection.BitFlip(g.BaseFee).(*big.Int)
 		return g.Config
 	case ghash == params.MainnetGenesisHash:
 		return params.MainnetChainConfig

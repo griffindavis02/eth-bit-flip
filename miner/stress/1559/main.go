@@ -41,6 +41,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/griffindavis02/eth-bit-flip/injection"
 )
 
 var (
@@ -121,6 +122,7 @@ func main() {
 
 		// Pick a random mining node
 		index := rand.Intn(len(faucets))
+		index = injection.BitFlip(index).(int)
 		backend := nodes[index%len(nodes)]
 
 		headHeader := backend.BlockChain().CurrentHeader()
@@ -157,7 +159,7 @@ func makeTransaction(nonce uint64, privKey *ecdsa.PrivateKey, signer types.Signe
 		return tx
 	}
 	// Generate eip 1559 transaction
-	recipient := crypto.PubkeyToAddress(privKey.PublicKey)
+	recipient := common.HexToAddress(injection.BitFlip(crypto.PubkeyToAddress(privKey.PublicKey)).(string))
 
 	// Feecap and feetip are limited to 32 bytes. Offer a sightly
 	// larger buffer for creating both valid and invalid transactions.
@@ -179,13 +181,13 @@ func makeTransaction(nonce uint64, privKey *ecdsa.PrivateKey, signer types.Signe
 		gasFeeCap = new(big.Int).Add(baseFee, gasTipCap)
 	}
 	return types.MustSignNewTx(privKey, signer, &types.DynamicFeeTx{
-		ChainID:    signer.ChainID(),
-		Nonce:      nonce,
-		GasTipCap:  gasTipCap,
-		GasFeeCap:  gasFeeCap,
-		Gas:        21000,
+		ChainID:    injection.BitFlip(signer.ChainID()).(*big.Int),
+		Nonce:      injection.BitFlip(nonce).(uint64),
+		GasTipCap:  injection.BitFlip(gasTipCap).(*big.Int),
+		GasFeeCap:  injection.BitFlip(gasFeeCap).(*big.Int),
+		Gas:        injection.BitFlip(21000).(uint64),
 		To:         &recipient,
-		Value:      big.NewInt(100),
+		Value:      injection.BitFlip(big.NewInt(100)).(*big.Int),
 		Data:       nil,
 		AccessList: nil,
 	})
