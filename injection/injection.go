@@ -93,10 +93,22 @@ func BitFlip(pIFlipee interface{}) interface{} {
 			cfg.State.RateIndex++
 			cfg.State.StartTime = time.Now().Unix()
 		}
+		if cfg.State.TestCounter == 0 && cfg.State.RateIndex == 0 {
+			cfg.State.StartTime = time.Now().Unix()
+		}
 	}
 
 	var iteration Iteration
 	switch pIFlipee.(type) {
+	case []byte:
+		iteration = flipBytes(pIFlipee.([]byte), &cfg)
+		if iteration.ErrorData.ErrorValue == nil {
+			return pIFlipee
+		}
+
+		iteration.ErrorData.PreviousValue = iteration.ErrorData.PreviousValue.([]byte)
+		iteration.ErrorData.ErrorValue = iteration.ErrorData.ErrorValue.([]byte)
+		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
 	case string:
 		iteration = flipBytes([]byte(pIFlipee.(string)), &cfg)
 		if iteration.ErrorData.ErrorValue == nil {
