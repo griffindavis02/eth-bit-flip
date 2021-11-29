@@ -1,0 +1,55 @@
+web3.eth.sendTransaction({from: "0x85c58cf29d98cf731520224da7954d527cb78cf0",to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",value: 1000000000000000000})
+
+web3.eth.getBalance(web3.eth.coinbase)
+
+web3.eth.getTransactionCount(web3.eth.coinbase)
+
+web3.eth.getBlock(
+
+web3.eth.getTransaction("0x0000000000000000000000000000000000000000000000000000000000000000")
+web3.eth.getTransaction("0x966e258937564886a3d82258a7242ec7058b36fdbf3d5018a490c060594161e8")
+
+INFO [11-29|17:21:40.408] Submitted transaction                    hash=0x0000000000000000000000000000000000000000000000000000000000000000 from=0x85C58Cf29d98cF731520224dA7954d527Cb78cf0 nonce=1 recipient=0xEe072662B53dC708E6E4D5f2e47e6CB407A4035e value=1,000,000,000
+"0x0000000000000000000000000000000000000000000000000000000000000000"
+> INFO [11-29|17:21:41.041] Commit new mining work                   number=130 sealhash=1537b7..6dec8a uncles=0 txs=1 gas=21000 fees=2.1e-05 elapsed=2.008ms
+
+
+{
+  blockHash: "0x7564d196b575428109b0aec06142543c2dd4878368e78eaa34278381121f0fba",
+  blockNumber: 146,
+  from: "0x85c58cf29d98cf731520224da7954d527cb78cf0",
+  gas: 21000,
+  gasPrice: 1000000000,
+  hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+  input: "0x",
+  nonce: 3,
+  r: "0x63ce3bd48e50f793b46b34ef136c291d3efe618885eb19a3094c267a6424f7cf",
+  s: "0xf8167168f9f25d995ab4d693fee5693f92887a92161112b56b8ee586ff4cc4f",
+  to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",
+  transactionIndex: 0,
+  type: "0x0",
+  v: "0x10f1a",
+  value: 1000000000000000000
+}
+
+ERROR[11-29|17:37:14.070] Transaction not found                    number=139 hash=398f84..e6921b txhash=966e25..4161e8
+null
+
+{
+  blockHash: "0x398f841efe53fba2e2201eb7cb9fb9ee5f9ffcd611fc94caada13a75d6e6921b",
+  blockNumber: 139,
+  from: "0x85c58cf29d98cf731520224da7954d527cb78cf0",
+  gas: 21000,
+  gasPrice: 1000000000,
+  hash: "0x966e258937564886a3d82258a7242ec7058b36fdbf3d5018a490c060594161e8",
+  input: "0x",
+  nonce: 2,
+  r: "0xc6240809e2b40bb14467a06c39e25761b2fe00fddff72c8c24a8710c298f67f8",
+  s: "0x114b54a08b93c37d9026ba2125ae47d83e823dfac853416badc58a59a9104473",
+  to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",
+  transactionIndex: 0,
+  type: "0x0",
+  v: "0x10f19",
+  value: 1000000000
+}
+

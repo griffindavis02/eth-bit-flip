@@ -1,0 +1,34 @@
+
+flip --flipstart
+eth.accounts
+eth.getBalance()[D"0x85c58cf29d98cf731520224da7954d527cb78cf0"
+[A[B[Beth.getBalance("0x85c58cf29d98cf731520224da7954d527cb78cf0")
+eth.sendTransaction({from:"0x85c58cf29d98cf731520224da7954d527cb78cf0",to:"0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",value:1000000000})
+eth.getBalance()[Deth.coinbase
+[B[B[Beth.getBalance(eth.coinbase)
+web3.eth.getBalance(eth.coinbase)
+[B[Bweb3.fromWei(web3.eth.getBalance("0x85c58cf29d98cf731520224da7954d527cb78cf0"))
+[A[A[B[B[A[B[C[D[D[D[D[C[C[C[C[C[B[D[D[D[D[D[D[D[D[D[D[D[D[D[D[D[B[B[B
+[A
+[A[A
+web3.eth.sendTransaction({from:"0x85c58cf29d98cf731520224da7954d527cb78cf0",to:"0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",value:1000000000})
+web3.eth.sendTransaction({from: "0x85c58cf29d98cf731520224da7954d527cb78cf0",to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",value: 1000000000})
+web3.eth.getBalance(web3.eth.coinbase))
+web3.eth.getBalance(web3.eth.coinbase)
+web3.eth.coinbase
+web3.eth.sendTransaction({from: "0x85c58cf29d98cf731520224da7954d527cb78cf0",to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",value: 1000000000})
+web3.eth.getBalance(eth.coinbase)
+web3.eth.sendTransaction({from: "0x85c58cf29d98cf731520224da7954d527cb78cf0",to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",value: 1000000000})
+[Dweb3.eth.sendTransaction({from: "0x85c58cf29d98cf731520224da7954d527cb78cf0",to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",value: 1000000000000000000})
+web3.eth.sendTransaction({from: "0x85c58cf29d98cf731520224da7954d527cb78cf0",to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",value: 1000000000000000000})
+web3.eth[A[B.getBlock(151)
+web3.eth.getTransactioCount(eweb3.eth.coinbase)
+web3.eth.getTransactionCount(web3.eth.coinbase)
+web3.eth.getBlock(146)
+[A
+web3.eth.getBlock(145)
+web3.eth.getBlock(144)
+web3.eth.getBlock(143)
+web3.eth.getBlock(146)
+web3.eth.getTransaction("0x0000000000000000000000000000000000000000000000000000000000000000")
+web3.eth.getTransaction("0x966e258937564886a3d82258a7242ec7058b36fdbf3d5018a490c060594161e8")
