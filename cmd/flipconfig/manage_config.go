@@ -70,7 +70,7 @@ func (cfg *Config) manageWizard() {
 		log.Printf("WARNING: choice must be within range 1-5. entered choice: \"%d\"", choice)
 	}
 
-	if err := WriteConfig(*cfg); err != nil {
+	if err := cfg.WriteConfig(); err != nil {
 		log.Fatalf("ERROR: %v", err)
 	} else {
 		if cfgByt, marshErr := json.MarshalIndent(cfg, "", "\t"); marshErr == nil {

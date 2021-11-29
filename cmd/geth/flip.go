@@ -43,7 +43,7 @@ func setStatus(ctx *cli.Context) error {
 		cfg.Restart = false
 	}
 
-	config.WriteConfig(cfg)
+	(&cfg).WriteConfig()
 
 	return nil
 }

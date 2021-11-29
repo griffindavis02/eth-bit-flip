@@ -205,7 +205,7 @@ func promptIntCB(prompt string, callback func(input int) (int, error)) int {
 	}
 }
 
-func WriteConfig(cfg Config) error {
+func (cfg *Config) WriteConfig() error {
 	bytCfg, err := json.MarshalIndent(cfg, "", "\t")
 	if err == nil {
 		if dErr := os.MkdirAll(filepath.Dir(file), os.ModePerm); dErr != nil {
