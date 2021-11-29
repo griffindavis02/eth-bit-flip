@@ -33,7 +33,7 @@ import (
 	"github.com/griffindavis02/eth-bit-flip/config"
 )
 
-type ErrorData struct {
+type errorData struct {
 	PreviousValue interface{}
 	PreviousByte  string
 	IntBits       []int
@@ -43,10 +43,10 @@ type ErrorData struct {
 	When          string
 }
 
-type Iteration struct {
+type iteration struct {
 	Rate         float64
 	IterationNum int
-	ErrorData    ErrorData
+	ErrorData    errorData
 }
 
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
@@ -98,7 +98,7 @@ func BitFlip(pIFlipee interface{}) interface{} {
 		}
 	}
 
-	var iteration Iteration
+	var iteration iteration
 	switch pIFlipee.(type) {
 	case []byte:
 		iteration = flipBytes(pIFlipee.([]byte), &cfg)
@@ -226,10 +226,10 @@ func BitFlip(pIFlipee interface{}) interface{} {
 	return iteration.ErrorData.ErrorValue
 }
 
-func flipBytes(pbytFlipee []byte, cfg *config.Config) Iteration {
+func flipBytes(pbytFlipee []byte, cfg *config.Config) iteration {
 	decRate := cfg.State.ErrorRates[cfg.State.RateIndex]
 	var arrBits []int
-	var iteration Iteration
+	var iter iteration
 
 	// Store previous states
 	lngPrevCounter := cfg.State.TestCounter
@@ -257,10 +257,10 @@ func flipBytes(pbytFlipee []byte, cfg *config.Config) Iteration {
 			cfg.State.TestCounter++
 		}
 		// Build error data
-		iteration = Iteration{
+		iter = iteration{
 			cfg.State.ErrorRates[cfg.State.RateIndex],
 			int(lngPrevCounter),
-			ErrorData{
+			errorData{
 				bytPrevFlipee,
 				"0x" + hex.EncodeToString(bytPrevFlipee),
 				arrBits,
@@ -275,7 +275,7 @@ func flipBytes(pbytFlipee []byte, cfg *config.Config) Iteration {
 		cfg.WriteConfig()
 	}
 
-	return iteration
+	return iter
 }
 
 func restart(cfg *config.Config) {
@@ -285,15 +285,15 @@ func restart(cfg *config.Config) {
 	cfg.Restart = false
 }
 
-func printOut(iteration Iteration, cfg *config.Config) {
-	if iteration.ErrorData.PreviousValue == iteration.ErrorData.ErrorValue {
+func printOut(pIteration iteration, cfg *config.Config) {
+	if pIteration.ErrorData.PreviousValue == pIteration.ErrorData.ErrorValue {
 		return
 	}
 	// TODO: Look for logging boolean before printing?
-	bytJSON, _ := json.MarshalIndent(iteration, "", "    ")
+	bytJSON, _ := json.MarshalIndent(pIteration, "", "    ")
 	fmt.Println(string(bytJSON) + ",")
 	if cfg.Server.Post {
-		postAPI(cfg.Server.Host, iteration)
+		postAPI(cfg.Server.Host, pIteration)
 	}
 }
 
