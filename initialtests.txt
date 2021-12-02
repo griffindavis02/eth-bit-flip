@@ -9,6 +9,10 @@ web3.eth.getBlock(
 web3.eth.getTransaction("0x0000000000000000000000000000000000000000000000000000000000000000")
 web3.eth.getTransaction("0x966e258937564886a3d82258a7242ec7058b36fdbf3d5018a490c060594161e8")
 
+drive home on ability to configure error laden
+experiment is successful due to hash zeroing
+	this shows that any transactions that are zeroed will be overwritten by future zeroed hashes which removes data from the blockchain
+
 INFO [11-29|17:21:40.408] Submitted transaction                    hash=0x0000000000000000000000000000000000000000000000000000000000000000 from=0x85C58Cf29d98cF731520224dA7954d527Cb78cf0 nonce=1 recipient=0xEe072662B53dC708E6E4D5f2e47e6CB407A4035e value=1,000,000,000
 "0x0000000000000000000000000000000000000000000000000000000000000000"
 > INFO [11-29|17:21:41.041] Commit new mining work                   number=130 sealhash=1537b7..6dec8a uncles=0 txs=1 gas=21000 fees=2.1e-05 elapsed=2.008ms
@@ -53,3 +57,10 @@ null
   value: 1000000000
 }
 
+WARN [12-02|09:24:45.379] Served eth_sendTransaction               reqid=31 t=33.8966ms err="already known"
+Error: already known
+        at web3.js:6357:37(47)
+        at send (web3.js:5091:62(35))
+        at <eval>:1:25(11)
+
+ERROR[12-02|09:27:21.038] No transaction found to be deleted       hash=000000..ad59c0
