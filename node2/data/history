@@ -1,0 +1,5 @@
+
+eth.accounts[0]
+web3.eth.getBalance(web3.eth.coinbase)
+web3.eth.coinbase
+web3.eth.getTransaction("0x966e258937564886a3d82258a7242ec7058b36fdbf3d5018a490c060594161e8")
