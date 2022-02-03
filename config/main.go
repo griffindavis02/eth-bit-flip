@@ -114,7 +114,7 @@ func flipWizard(ctx *cli.Context) {
 	fmt.Println("|                                                           |")
 	fmt.Println("| This will allow you to configure the test parameters for  |")
 	fmt.Println("| simulating soft errors in the EVM. The parameters decide  |")
-	fmt.Println("| the ranomness of bit flipping based on data you wish to   |")
+	fmt.Println("| the randomness of bit flipping based on data you wish to  |")
 	fmt.Println("| collect.                                                  |")
 	fmt.Println("|                                                           |")
 	fmt.Println("| This tool and all other items within the eth-bit-flip     |")
