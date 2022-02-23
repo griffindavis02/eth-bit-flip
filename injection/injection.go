@@ -261,7 +261,6 @@ func flipBytes(pbytFlipee []byte, cfg *config.Config) iteration {
 
 	// Ensure there was a change
 	if !bytes.Equal(pbytFlipee, bytPrevFlipee) {
-		fmt.Println("Decrate:", decRate)
 		if cfg.State.TestType == "variable" {
 			cfg.State.TestCounter++
 		}
@@ -301,7 +300,7 @@ func printOut(pIteration iteration, cfg *config.Config) {
 	}
 	// TODO: Look for logging boolean before printing?
 	bytJSON, _ := json.MarshalIndent(pIteration, "", "    ")
-	fmt.Println(string(bytJSON) + ",")
+	fmt.Println(string(bytJSON))
 	if cfg.Server.Post {
 		postAPI(cfg.Server.Host, pIteration)
 	}
@@ -314,7 +313,7 @@ func postAPI(url string, jsonOut interface{}) int {
 		log.Fatal(err)
 	}
 	query := req.URL.Query()
-	params, _ := json.Marshal(jsonOut)
+	params, _ := json.Marshal(jsonOut.(iteration))
 	query.Add("params", string(params))
 	req.URL.RawQuery = query.Encode()
 
