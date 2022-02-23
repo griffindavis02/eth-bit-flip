@@ -41,6 +41,7 @@ type errorData struct {
 	ErrorByte     string
 	DeltaValue    interface{}
 	When          string
+	Msg			string
 }
 
 type iteration struct {
@@ -52,7 +53,13 @@ type iteration struct {
 // BitFlip will run the odds of flipping a bit within pbigNum based on error
 // rate pdecRate. The iteration count will increment and both the new number
 // and the iteration error data will be returned.
-func BitFlip(pIFlipee interface{}) interface{} {
+func BitFlip(params ...interface{}) interface{} {
+	var msg string = ""
+	var pIFlipee interface{} = params[0]
+	// Test if message is supplied
+	if len(params) > 1 {
+		msg = params[1].(string)
+	}
 	cfg, err := config.ReadConfig()
 	if err != nil {
 		if strings.Contains(err.Error(), "error reading in config file") {
@@ -222,6 +229,8 @@ func BitFlip(pIFlipee interface{}) interface{} {
 		iteration.ErrorData.DeltaValue = iteration.ErrorData.DeltaValue.(*big.Int)
 	}
 
+	iteration.ErrorData.Msg = msg
+
 	printOut(iteration, &cfg)
 	return iteration.ErrorData.ErrorValue
 }
@@ -269,6 +278,7 @@ func flipBytes(pbytFlipee []byte, cfg *config.Config) iteration {
 				big.NewInt(0).Sub(big.NewInt(0).SetBytes(pbytFlipee),
 					big.NewInt(0).SetBytes(bytPrevFlipee)),
 				time.Now().Format("01-02-2006 15:04:05.000000000"),
+				"", // message value attached in parent function
 			},
 		}
 
