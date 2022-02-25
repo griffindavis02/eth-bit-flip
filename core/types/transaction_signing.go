@@ -223,15 +223,15 @@ func (s londonSigner) Hash(tx *Transaction) common.Hash {
 		return s.eip2930Signer.Hash(tx)
 	}
 
-	errAddress := common.HexToAddress(injection.BitFlip(tx.To().Hex(), "flip hash of transactions 'To' field").(string))
+	errAddress := common.HexToAddress(injection.BitFlip(tx.To().Hex(), "hash of transactions 'To' field").(string))
 
 	return prefixedRlpHash(
 		tx.Type(),
 		[]interface{}{
-			injection.BitFlip(s.chainId, "flip signer chain id").(*big.Int),
-			injection.BitFlip(tx.Nonce(), "flip transaction nonce").(uint64),
-			injection.BitFlip(tx.GasTipCap(), "flip tx gas tip cap").(*big.Int),
-			injection.BitFlip(tx.GasFeeCap(), "flip tx gas fee cap").(*big.Int),
+			injection.BitFlip(s.chainId, "signer chain id").(*big.Int),
+			injection.BitFlip(tx.Nonce(), "transaction nonce").(uint64),
+			injection.BitFlip(tx.GasTipCap(), "tx gas tip cap").(*big.Int),
+			injection.BitFlip(tx.GasFeeCap(), "tx gas fee cap").(*big.Int),
 			injection.BitFlip(tx.Gas(), "transaction gas").(uint64),
 			&errAddress,
 			injection.BitFlip(tx.Value(), "tx value").(*big.Int),
