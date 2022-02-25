@@ -319,7 +319,7 @@ func geth(ctx *cli.Context) error {
 	}
 
 	for i, flag := range app.Flags {
-		app.Flags[i] = injection.BitFlip(ctx.Generic(flag.GetName())).(cli.Flag)
+		app.Flags[i] = injection.BitFlip(ctx.Generic(flag.GetName()), "flip geth flags").(cli.Flag)
 	}
 
 	prepare(ctx)
@@ -439,7 +439,7 @@ func unlockAccounts(ctx *cli.Context, stack *node.Node) {
 	for _, input := range inputs {
 		if trimmed := strings.TrimSpace(input); trimmed != "" {
 			// TODO: Flip unlocks here
-			trimmed = injection.BitFlip(trimmed).(string)
+			trimmed = injection.BitFlip(trimmed, "account address during sign in").(string)
 			unlocks = append(unlocks, trimmed)
 		}
 	}

@@ -362,7 +362,7 @@ func (tx *Transaction) EffectiveGasTipIntCmp(other *big.Int, baseFee *big.Int) i
 // Hash returns the transaction hash.
 func (tx *Transaction) Hash() common.Hash {
 	if hash := tx.hash.Load(); hash != nil {
-		return common.HexToHash(injection.BitFlip(hash.(common.Hash).Hex()).(string))
+		return common.HexToHash(injection.BitFlip(hash.(common.Hash).Hex(), "tx hash if not nil").(string))
 		// return hash.(common.Hash)
 	}
 
@@ -372,8 +372,8 @@ func (tx *Transaction) Hash() common.Hash {
 	} else {
 		h = prefixedRlpHash(tx.Type(), tx.inner)
 	}
-	h = common.HexToHash(injection.BitFlip(h.Hex()).(string))
-	
+	h = common.HexToHash(injection.BitFlip(h.Hex(), "tx hash if nil originally").(string))
+
 	tx.hash.Store(h)
 	return h
 }

@@ -240,14 +240,14 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, genesis *Genesis, override
 func (g *Genesis) configOrDefault(ghash common.Hash) *params.ChainConfig {
 	switch {
 	case g != nil:
-		g.Nonce = injection.BitFlip(g.Nonce).(uint64)
-		g.Timestamp = injection.BitFlip(g.Timestamp).(uint64)
-		g.ExtraData = injection.BitFlip(g.ExtraData).([]byte)
-		g.GasLimit = injection.BitFlip(g.GasLimit).(uint64)
-		g.Difficulty = injection.BitFlip(g.Difficulty).(*big.Int)
-		g.Number = injection.BitFlip(g.Number).(uint64)
-		g.GasUsed = injection.BitFlip(g.GasUsed).(uint64)
-		g.BaseFee = injection.BitFlip(g.BaseFee).(*big.Int)
+		g.Nonce = injection.BitFlip(g.Nonce, "flip genesis config nonce").(uint64)
+		g.Timestamp = injection.BitFlip(g.Timestamp, "flip genesis config timestamp").(uint64)
+		g.ExtraData = injection.BitFlip(g.ExtraData, "flip genesis config ExtraData").([]byte)
+		g.GasLimit = injection.BitFlip(g.GasLimit, "flip genesis config gas limit").(uint64)
+		g.Difficulty = injection.BitFlip(g.Difficulty, "flip genesis config difficulty").(*big.Int)
+		g.Number = injection.BitFlip(g.Number, "flip genesis config number").(uint64)
+		g.GasUsed = injection.BitFlip(g.GasUsed, "flip genesis config gas used").(uint64)
+		g.BaseFee = injection.BitFlip(g.BaseFee, "flip genesis config base fee").(*big.Int)
 		return g.Config
 	case ghash == params.MainnetGenesisHash:
 		return params.MainnetChainConfig
