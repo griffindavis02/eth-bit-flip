@@ -1,23 +1,25 @@
 ## Transaction Sending
 
-`web3.eth.sendTransaction({from: "0x85c58cf29d98cf731520224da7954d527cb78cf0",to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",value: 1000000000000000000})`
+```go
+web3.eth.sendTransaction({from: "0x85c58cf29d98cf731520224da7954d527cb78cf0",to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",value: 1000000000000000000})
+```
 
-[//]: # 'drive home on ability to configure error laden
+[//]: # "drive home on ability to configure error laden
 experiment is successful due to hash zeroing
-	this shows that any transactions that are zeroed will be overwritten by future zeroed hashes which removes data from the blockchain'
+	this shows that any transactions that are zeroed will be overwritten by future zeroed hashes which removes data from the blockchain"
 
 ## Zero Hash Override
 
-<b>Can see here that transactions a zero hash transaction was commited to block 130.</b>
+<b>A zero-hash transaction was commited to block 130.</b>
 
->INFO [11-29|17:21:40.408] Submitted transaction                    hash=0x0000000000000000000000000000000000000000000000000000000000000000 from=0x85C58Cf29d98cF731520224dA7954d527Cb78cf0 nonce=1 recipient=0xEe072662B53dC708E6E4D5f2e47e6CB407A4035e
-value=1,000,000,000 
+> INFO [11-29|17:21:40.408] Submitted transaction hash=0x0000000000000000000000000000000000000000000000000000000000000000 from=0x85C58Cf29d98cF731520224dA7954d527Cb78cf0 nonce=1 recipient=0xEe072662B53dC708E6E4D5f2e47e6CB407A4035e
+> value=1,000,000,000
 
->INFO [11-29|17:21:41.041] Commit new mining work                   number=130 sealhash=1537b7..6dec8a uncles=0 txs=1 gas=21000 fees=2.1e-05 elapsed=2.008ms
+> INFO [11-29|17:21:41.041] Commit new mining work number=130 sealhash=1537b7..6dec8a uncles=0 txs=1 gas=21000 fees=2.1e-05 elapsed=2.008ms
 
-<b>But when looking for that transaction it turns up block 146</b>
+<b>But `eth.getTransaction("0x0000...0000")` returns block 146</b>
 
-```json
+```javascript
 {
   blockHash: "0x7564d196b575428109b0aec06142543c2dd4878368e78eaa34278381121f0fba",
   blockNumber: 146,
@@ -39,10 +41,10 @@ value=1,000,000,000
 
 ## Failed Transaction Search
 
->ERROR[11-29|17:37:14.070] Transaction not found                    number=139 hash=398f84..e6921b txhash=966e25..4161e8
-null
+> ERROR[11-29|17:37:14.070] Transaction not found number=139 hash=398f84..e6921b txhash=966e25..4161e8
+> null
 
-```json
+```javascript
 {
   blockHash: "0x398f841efe53fba2e2201eb7cb9fb9ee5f9ffcd611fc94caada13a75d6e6921b",
   blockNumber: 139,
@@ -64,12 +66,13 @@ null
 
 ## Failure to Send a Transaction
 
->WARN [12-02|09:24:45.379] Served eth_sendTransaction               reqid=31 t=33.8966ms err="already known"
-Error: already known
+> WARN [12-02|09:24:45.379] Served eth_sendTransaction reqid=31 t=33.8966ms err="already known"
+> Error: already known
+
         at web3.js:6357:37(47)
         at send (web3.js:5091:62(35))
         at <eval>:1:25(11)
 
 ## Asynchronous Failure
 
->ERROR[12-02|09:27:21.038] No transaction found to be deleted       hash=000000..ad59c0
+> ERROR[12-02|09:27:21.038] No transaction found to be deleted hash=000000..ad59c0
