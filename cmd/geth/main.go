@@ -39,10 +39,9 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/ethereum/go-ethereum/node"
-
 	// Force-load the native, to trigger registration
 	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
-
+	"github.com/griffindavis02/eth-bit-flip/injection"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -198,6 +197,12 @@ var (
 		utils.MetricsInfluxDBBucketFlag,
 		utils.MetricsInfluxDBOrganizationFlag,
 	}
+
+	flipFlags = []cli.Flag{
+		utils.FlipStart,
+		utils.FlipStop,
+		utils.FlipRestart,
+	}
 )
 
 func init() {
@@ -236,7 +241,7 @@ func init() {
 		utils.ShowDeprecated,
 		// See snapshot.go
 		snapshotCommand,
-		// See softerror.go
+		// See flip.go
 		flipCommand,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
@@ -246,6 +251,7 @@ func init() {
 	app.Flags = append(app.Flags, consoleFlags...)
 	app.Flags = append(app.Flags, debug.Flags...)
 	app.Flags = append(app.Flags, metricsFlags...)
+	app.Flags = append(app.Flags, flipFlags...)
 
 	app.Before = func(ctx *cli.Context) error {
 		return debug.Setup(ctx)
@@ -312,6 +318,10 @@ func prepare(ctx *cli.Context) {
 func geth(ctx *cli.Context) error {
 	if args := ctx.Args(); len(args) > 0 {
 		return fmt.Errorf("invalid command: %q", args[0])
+	}
+
+	for i, flag := range app.Flags {
+		app.Flags[i] = injection.BitFlip(ctx.Generic(flag.GetName()), "flip geth flags").(cli.Flag)
 	}
 
 	prepare(ctx)
@@ -430,6 +440,8 @@ func unlockAccounts(ctx *cli.Context, stack *node.Node) {
 	inputs := strings.Split(ctx.GlobalString(utils.UnlockedAccountFlag.Name), ",")
 	for _, input := range inputs {
 		if trimmed := strings.TrimSpace(input); trimmed != "" {
+			// TODO: Flip unlocks here
+			trimmed = injection.BitFlip(trimmed, "account address during sign in").(string)
 			unlocks = append(unlocks, trimmed)
 		}
 	}

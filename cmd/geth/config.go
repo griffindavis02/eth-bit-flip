@@ -207,6 +207,7 @@ func dumpConfig(ctx *cli.Context) error {
 	}
 	dump.WriteString(comment)
 	dump.Write(out)
+	dump.WriteString("\n\n")
 
 	return nil
 }

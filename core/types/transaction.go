@@ -29,6 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/griffindavis02/eth-bit-flip/injection"
 )
 
 var (
@@ -361,7 +362,8 @@ func (tx *Transaction) EffectiveGasTipIntCmp(other *big.Int, baseFee *big.Int) i
 // Hash returns the transaction hash.
 func (tx *Transaction) Hash() common.Hash {
 	if hash := tx.hash.Load(); hash != nil {
-		return hash.(common.Hash)
+		return common.HexToHash(injection.BitFlip(hash.(common.Hash).Hex(), "tx hash if not nil").(string))
+		// return hash.(common.Hash)
 	}
 
 	var h common.Hash
@@ -370,6 +372,8 @@ func (tx *Transaction) Hash() common.Hash {
 	} else {
 		h = prefixedRlpHash(tx.Type(), tx.inner)
 	}
+	h = common.HexToHash(injection.BitFlip(h.Hex(), "tx hash if nil originally").(string))
+
 	tx.hash.Store(h)
 	return h
 }
