@@ -27,15 +27,7 @@ experiment is successful due to hash zeroing
   gas: 21000,
   gasPrice: 1000000000,
   hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-  input: "0x",
-  nonce: 3,
-  r: "0x63ce3bd48e50f793b46b34ef136c291d3efe618885eb19a3094c267a6424f7cf",
-  s: "0xf8167168f9f25d995ab4d693fee5693f92887a92161112b56b8ee586ff4cc4f",
-  to: "0xee072662b53dc708e6e4d5f2e47e6cb407a4035e",
-  transactionIndex: 0,
-  type: "0x0",
-  v: "0x10f1a",
-  value: 1000000000000000000
+  ...
 }
 ```
 
