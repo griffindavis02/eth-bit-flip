@@ -41,7 +41,6 @@ import (
 	"github.com/ethereum/go-ethereum/node"
 	// Force-load the native, to trigger registration
 	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
-	"github.com/griffindavis02/eth-bit-flip/injection"
 	"gopkg.in/urfave/cli.v1"
 )
 
