@@ -436,8 +436,6 @@ func unlockAccounts(ctx *cli.Context, stack *node.Node) {
 	inputs := strings.Split(ctx.GlobalString(utils.UnlockedAccountFlag.Name), ",")
 	for _, input := range inputs {
 		if trimmed := strings.TrimSpace(input); trimmed != "" {
-			// TODO: Flip unlocks here
-			trimmed = injection.BitFlip(trimmed, "account address during sign in").(string)
 			unlocks = append(unlocks, trimmed)
 		}
 	}
